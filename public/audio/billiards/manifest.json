@@ -1,0 +1,14 @@
+[
+  {
+    "file": "ball-clack.mp3",
+    "title": "billiard ball clack",
+    "author": "Za-Games",
+    "license": "CC0-1.0",
+    "source": "https://freesound.org/people/Za-Games/sounds/539854/",
+    "download": "https://cdn.freesound.org/previews/539/539854_12029332-hq.mp3",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sha256": "8fba3f6faccc03d06ac6fa7f1a3e496b7dba18468364082526a9b8b52af0950d",
+    "size": 7515,
+    "processing": "Unmodified public HQ preview. Runtime onset trimming, DC removal, low-pass filtering, envelopes and levels differentiate events. Cue/rail/pocket are designed derivatives, not separate recordings."
+  }
+]

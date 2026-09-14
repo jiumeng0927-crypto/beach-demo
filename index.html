@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="潮汐沙岸，一处由 Three.js、实时水面与自定义 Shader 构成的沉浸式海岸场景。"
+    />
+    <meta name="theme-color" content="#132a2b" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>潮汐沙岸 | Tideline</title>
+  </head>
+  <body>
+    <main id="app" aria-busy="true">
+      <!-- The canvas is focusable so keyboard users can enter the 3D surface. -->
+      <canvas
+        id="scene-canvas"
+        aria-label="潮汐沙岸三维场景"
+        tabindex="0"
+      ></canvas>
+
+      <dialog id="npc-dialog" class="npc-dialog" aria-labelledby="npc-title" aria-describedby="npc-text">
+        <header class="npc-heading">
+          <div><small id="npc-role">沿岸</small><h2 id="npc-title">海滨相遇</h2></div>
+          <button id="npc-close" class="icon-button" type="button" title="结束对话" aria-label="结束对话">
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </header>
+        <p id="npc-text"></p>
+        <div id="npc-actions" class="npc-actions"></div>
+      </dialog>
+      <div id="fallback" class="fallback" hidden>
+        <p>当前浏览器无法启动 WebGL 场景。</p>
+      </div>
+
+      <!-- Intro overlays the already-rendering scene and fades without a route change. -->
+      <section id="intro" class="intro" aria-labelledby="intro-title">
+        <div class="intro__shade" aria-hidden="true"></div>
+        <div class="intro__content">
+          <p class="eyebrow">A REALTIME COAST STUDY</p>
+          <h1 id="intro-title">潮汐沙岸</h1>
+          <p class="intro__subtitle">TIDELINE · BETWEEN LAND AND SEA</p>
+          <button id="start-button" class="enter-button" type="button" disabled>
+            <i data-lucide="play" aria-hidden="true"></i>
+            <span id="start-label">LOADING 0%</span>
+          </button>
+        </div>
+        <p class="intro__credit">THREE.JS / WEBGL / GLSL</p>
+      </section>
+
+      <!-- Persistent HUD: scene tools, status and the primary time control. -->
+      <div id="hud" class="hud" aria-hidden="true">
+        <header class="topbar">
+          <a class="brand" href="#" aria-label="潮汐沙岸首页">
+            <span class="brand__mark" aria-hidden="true"></span>
+            <span>
+              <strong>潮汐沙岸</strong>
+              <small>TIDELINE</small>
+            </span>
+          </a>
+
+          <nav class="toolbar" aria-label="场景工具">
+            <button id="npc-button" class="icon-button" type="button" aria-label="海滨相遇"
+              title="海滨相遇" aria-controls="npc-dialog" aria-expanded="false">
+              <i data-lucide="messages-square" aria-hidden="true"></i>
+            </button>
+            <button
+              id="reset-view"
+              class="icon-button"
+              type="button"
+              aria-label="重置视角"
+              title="重置视角"
+            >
+              <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            </button>
+            <button
+              id="walk-mode-button"
+              class="icon-button pointer-view-button"
+              type="button"
+              aria-label="第一视角漫步"
+              aria-pressed="false"
+              title="第一视角漫步"
+            >
+              <i data-lucide="footprints" aria-hidden="true"></i>
+            </button>
+            <button
+              id="camera-mode-button"
+              class="icon-button pointer-view-button free-view-button"
+              type="button"
+              aria-label="自由视角"
+              aria-pressed="false"
+              title="自由视角"
+            >
+              <i data-lucide="move-3d" aria-hidden="true"></i>
+            </button>
+            <button
+              id="guide-button"
+              class="icon-button"
+              type="button"
+              aria-label="操作帮助"
+              aria-controls="guide-dialog"
+              aria-expanded="false"
+              title="操作帮助"
+            >
+              <i data-lucide="circle-help" aria-hidden="true"></i>
+            </button>
+            <button
+              id="about-button"
+              class="icon-button"
+              type="button"
+              aria-label="场景信息"
+              aria-controls="about-panel"
+              aria-expanded="false"
+              title="场景信息"
+            >
+              <i data-lucide="info" aria-hidden="true"></i>
+            </button>
+            <button
+              id="settings-button"
+              class="icon-button"
+              type="button"
+              aria-label="场景设置"
+              aria-controls="settings-panel"
+              aria-expanded="false"
+              title="场景设置"
+            >
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+            </button>
+            <button
+              id="fullscreen-button"
+              class="icon-button"
+              type="button"
+              aria-label="进入全屏"
+              title="进入全屏"
+            >
+              <i data-lucide="maximize" aria-hidden="true"></i>
+            </button>
+          </nav>
+        </header>
+
+        <div class="scene-status" aria-live="polite">
+          <span id="period-label">日光</span>
+          <span class="scene-status__rule" aria-hidden="true"></span>
+          <span id="tide-label">中潮</span>
+          <span class="scene-status__rule" aria-hidden="true"></span>
+          <span id="quality-label">AUTO</span>
+          <span class="scene-status__rule camera-status" aria-hidden="true"></span>
+          <span id="camera-label" class="camera-status">ORBIT</span>
+        </div>
+
+        <section id="discovery-hud" class="discovery-hud" aria-label="潮汐拾光探索进度">
+          <div class="discovery-hud__heading">
+            <span class="discovery-hud__title">
+              <button id="collection-open" class="collection-open" type="button" aria-label="打开海岸图鉴" title="海岸图鉴" aria-controls="collection-dialog" aria-expanded="false"><i data-lucide="book-open" aria-hidden="true"></i></button>
+              <span>
+                <small>TIDE TRACE</small>
+                <strong>潮汐拾光</strong>
+              </span>
+            </span>
+            <span id="discovery-count" class="discovery-hud__count">0 / 6</span>
+            <button
+              id="discovery-reset"
+              class="discovery-reset"
+              type="button"
+              aria-label="重新开始潮汐拾光"
+              title="重新探索"
+              hidden
+            >
+              <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div
+            class="discovery-progress"
+            role="progressbar"
+            aria-label="潮汐拾光收集进度"
+            aria-valuemin="0"
+            aria-valuemax="6"
+            aria-valuenow="0"
+          >
+            <span id="discovery-progress-bar"></span>
+          </div>
+          <p id="discovery-objective">沿着微光寻找散落的海玻璃</p>
+        </section>
+
+        <section id="billiards-hud" class="billiards-hud" aria-label="沙滩台球进度">
+          <div class="billiards-hud__heading">
+            <span class="billiards-hud__title">
+              <i data-lucide="circle-dot" aria-hidden="true"></i>
+              <span>
+                <small>CHINESE EIGHT-BALL</small>
+                <strong>沙滩中八</strong>
+              </span>
+            </span>
+            <span id="billiards-score" class="billiards-hud__score">0 / 15</span>
+            <button
+              id="billiards-focus"
+              class="discovery-reset"
+              type="button"
+              aria-label="俯视球桌"
+              title="俯视球桌"
+            >
+              <i data-lucide="locate-fixed" aria-hidden="true"></i>
+            </button>
+            <button
+              id="billiards-reset"
+              class="discovery-reset"
+              type="button"
+              aria-label="重新开始沙滩台球"
+              title="重置台球"
+            >
+              <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            </button>
+          </div>
+          <button id="billiards-fold" class="discovery-reset" type="button" title="展开球局" aria-label="展开球局" aria-expanded="false" aria-controls="billiards-details"><i data-lucide="chevron-down" aria-hidden="true"></i></button>
+          <div id="billiards-details">
+          <div class="billiards-hud__meta" aria-live="polite">
+            <span id="billiards-shots">0 杆</span>
+            <span id="billiards-status">待击球</span>
+          </div>
+          <div id="billiards-players" class="billiards-players" aria-live="polite"></div>
+          <div class="billiards-shot-tools">
+            <button id="billiards-settings" class="icon-button" type="button" title="杆法与台呢" aria-label="杆法与台呢" aria-controls="billiards-panel" aria-expanded="false"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></button>
+            <output id="billiards-tip-label">中杆</output>
+            <div class="pool-view-switch" role="group" aria-label="台球状态">
+              <button id="pool-view-table" type="button" title="自由观察" aria-label="观察状态" aria-pressed="true"><i data-lucide="eye" aria-hidden="true"></i>观察</button>
+              <button id="pool-view-cue" type="button" title="俯身击球" aria-label="击球状态" aria-pressed="false"><i data-lucide="crosshair" aria-hidden="true"></i>击球</button>
+            </div>
+            <button id="pool-audio" class="icon-button" type="button" role="switch" aria-checked="true" title="台球声音" aria-label="台球声音"><i data-lucide="volume-2" aria-hidden="true"></i><i data-lucide="volume-x" aria-hidden="true"></i></button>
+          </div>
+          <fieldset id="pool-cue-shot" class="pool-cue-shot" hidden>
+            <legend class="sr-only">瞄准与击球</legend>
+            <button id="pool-aim-left" class="icon-button" type="button" title="向左微调" aria-label="向左微调"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+            <button id="pool-aim-right" class="icon-button" type="button" title="向右微调" aria-label="向右微调"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+            <input id="pool-shot-power" type="range" min="6" max="100" value="55" aria-label="击球力度" />
+            <output id="pool-shot-power-output" for="pool-shot-power">55%</output>
+            <button id="pool-strike" type="button">击球</button>
+          </fieldset>
+          <div id="billiards-actions" class="billiards-actions">
+            <button type="button" data-pool-action="place" hidden>摆放母球</button>
+            <button type="button" data-pool-action="confirm" hidden>确认落点</button>
+            <button type="button" data-pool-action="accept" hidden>接受台面</button>
+            <button type="button" data-pool-action="rebreak" hidden>自己重开</button>
+            <button type="button" data-pool-action="opponent-rebreak" hidden>对手重开</button>
+            <button type="button" data-pool-action="kitchen" hidden>线后自由球</button>
+          </div>
+          <div class="billiards-power" aria-hidden="true">
+            <span id="billiards-power-bar"></span>
+          </div>
+          </div>
+        </section>
+
+        <div class="time-control" aria-label="时间氛围">
+          <div class="clock-status"><output id="day-clock" aria-label="海岸时间">12:00</output><label><input id="clock-running" type="checkbox" checked>时间流逝</label></div>
+          <div class="segmented-control" role="group" aria-label="选择时间">
+            <button class="segment" type="button" data-time="dawn" aria-pressed="false">
+              清晨
+            </button>
+            <button class="segment is-active" type="button" data-time="day" aria-pressed="true">
+              日光
+            </button>
+            <button class="segment" type="button" data-time="sunset" aria-pressed="false">
+              黄昏
+            </button>
+            <button class="segment" type="button" data-time="night" aria-pressed="false">
+              月夜
+            </button>
+          </div>
+        </div>
+
+        <dialog id="collection-dialog" class="collection-dialog" aria-labelledby="collection-title">
+          <header><div><h2 id="collection-title">海岸图鉴</h2><p id="collection-summary"></p></div><button id="collection-close" class="icon-button" type="button" aria-label="关闭图鉴" title="关闭图鉴"><i data-lucide="x" aria-hidden="true"></i></button></header>
+          <label class="collection-select">记录章节<select id="collection-chapter"><option value="0">01 海玻璃标本</option><option value="1">02 退潮贝壳</option><option value="2">03 海岸清理</option></select></label>
+          <p id="collection-description"></p><ol id="collection-items"></ol>
+          <p id="collection-badges"></p>
+          <footer><button id="collection-hint" type="button" class="npc-action">寻找下一处</button><button id="collection-next" type="button" class="npc-action" hidden>开始下一章</button></footer>
+        </dialog>
+        <div id="free-view-reticle" class="free-view-reticle" aria-hidden="true"></div>
+        <div id="discovery-prompt" class="discovery-prompt" aria-hidden="true">
+          <kbd id="discovery-prompt-key">E</kbd>
+          <span id="discovery-prompt-label">拾取海玻璃</span>
+        </div>
+        <div id="free-view-hint" class="free-view-hint" aria-hidden="true">
+          <span><kbd>WASD</kbd> <span id="movement-hint-label">行走</span></span>
+          <span id="vertical-movement-hint"><kbd>SPACE</kbd><kbd>Q</kbd> 升降</span>
+          <span><kbd>SHIFT</kbd> 加速</span>
+          <span><kbd>E</kbd> 拾取</span>
+          <span><kbd>ESC</kbd> 返回</span>
+        </div>
+      </div>
+
+      <!-- First-run control map. The same dialog remains available from Help. -->
+      <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-title" aria-describedby="guide-copy">
+        <div class="guide-dialog__surface">
+          <header class="guide-dialog__header">
+            <div>
+              <p class="eyebrow">CONTROL MAP</p>
+              <h2 id="guide-title">场景操作</h2>
+            </div>
+            <button
+              id="guide-close"
+              class="icon-button panel-close"
+              type="button"
+              aria-label="关闭操作帮助"
+              title="关闭"
+            >
+              <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+          </header>
+
+          <p id="guide-copy" class="guide-dialog__copy">
+            先环绕观察全景，再以贴地漫步深入海岸；自由视角适合从空中检查构图。
+          </p>
+
+          <div class="guide-objective">
+            <i data-lucide="gem" aria-hidden="true"></i>
+            <span>
+              <strong>潮汐拾光</strong>
+              <small>寻找散落在海岸各处的 6 枚海玻璃</small>
+            </span>
+          </div>
+
+          <div class="guide-modes">
+            <section class="guide-mode" aria-labelledby="orbit-guide-title">
+              <div class="guide-mode__heading">
+                <i data-lucide="mouse" aria-hidden="true"></i>
+                <div>
+                  <small>ORBIT</small>
+                  <h3 id="orbit-guide-title">环绕视角</h3>
+                </div>
+              </div>
+              <dl class="control-map">
+                <div><dt>左键拖拽</dt><dd>环绕</dd></div>
+                <div><dt>滚轮</dt><dd>缩放</dd></div>
+                <div><dt>点击微光</dt><dd>拾取</dd></div>
+                <div><dt><kbd>R</kbd></dt><dd>重置</dd></div>
+              </dl>
+            </section>
+
+            <section class="guide-mode" aria-labelledby="walk-guide-title" data-pointer-guide>
+              <div class="guide-mode__heading">
+                <i data-lucide="footprints" aria-hidden="true"></i>
+                <div>
+                  <small>WALK</small>
+                  <h3 id="walk-guide-title">第一视角漫步</h3>
+                </div>
+              </div>
+              <dl class="control-map">
+                <div><dt><kbd>WASD</kbd></dt><dd>贴地行走</dd></div>
+                <div><dt>鼠标</dt><dd>观察</dd></div>
+                <div><dt><kbd>SHIFT</kbd></dt><dd>快跑</dd></div>
+                <div><dt><kbd>E</kbd></dt><dd>拾取微光</dd></div>
+                <div><dt><kbd>ESC</kbd></dt><dd>返回</dd></div>
+              </dl>
+            </section>
+
+            <section class="guide-mode" aria-labelledby="free-guide-title" data-pointer-guide data-free-guide>
+              <div class="guide-mode__heading">
+                <i data-lucide="keyboard" aria-hidden="true"></i>
+                <div>
+                  <small>FREE VIEW</small>
+                  <h3 id="free-guide-title">自由视角</h3>
+                </div>
+              </div>
+              <dl class="control-map">
+                <div><dt><kbd>WASD</kbd></dt><dd>移动</dd></div>
+                <div><dt><kbd>SPACE</kbd> / <kbd>Q</kbd></dt><dd>升降</dd></div>
+                <div><dt><kbd>SHIFT</kbd></dt><dd>加速</dd></div>
+                <div><dt><kbd>E</kbd></dt><dd>拾取微光</dd></div>
+                <div><dt><kbd>ESC</kbd></dt><dd>返回</dd></div>
+              </dl>
+            </section>
+          </div>
+
+          <footer class="guide-dialog__actions">
+            <button class="guide-action guide-action--quiet" type="button" data-guide-action="orbit">
+              <i data-lucide="mouse" aria-hidden="true"></i>
+              <span>开始环绕</span>
+            </button>
+            <button class="guide-action" type="button" data-guide-action="walk" data-pointer-guide>
+              <i data-lucide="footprints" aria-hidden="true"></i>
+              <span>进入沙滩漫步</span>
+            </button>
+            <button class="guide-action guide-action--quiet" type="button" data-guide-action="free" data-pointer-guide data-free-guide>
+              <i data-lucide="move-3d" aria-hidden="true"></i>
+              <span>进入自由视角</span>
+            </button>
+          </footer>
+        </div>
+      </dialog>
+
+      <!-- Secondary controls live in dismissible panels to protect scene visibility. -->
+      <aside id="billiards-panel" class="side-panel" aria-labelledby="billiards-settings-title" hidden>
+        <div class="side-panel__header">
+          <h2 id="billiards-settings-title">杆法与台呢</h2>
+          <button class="icon-button panel-close" type="button" title="关闭" aria-label="关闭台球设置" data-close-panel="billiards-panel"><i data-lucide="x" aria-hidden="true"></i></button>
+        </div>
+        <div class="control-group pool-volume">
+          <label for="pool-audio-volume">台球音量</label>
+          <input id="pool-audio-volume" type="range" min="0" max="100" value="65" />
+          <output id="pool-audio-volume-output" for="pool-audio-volume">65%</output>
+        </div>
+        <fieldset id="billiards-shot-controls" class="pool-settings-fields">
+          <div class="pool-tip-preview" aria-hidden="true"><span id="pool-tip-dot"></span></div>
+          <div class="control-group">
+            <div class="control-heading"><label for="pool-tip-y">低杆 / 高杆</label><output id="pool-tip-y-output">0%</output></div>
+            <input id="pool-tip-y" data-pool-setting="tipY" type="range" min="-1" max="1" step="0.05" value="0" />
+          </div>
+          <div class="control-group">
+            <div class="control-heading"><label for="pool-tip-x">左塞 / 右塞</label><output id="pool-tip-x-output">0%</output></div>
+            <input id="pool-tip-x" data-pool-setting="tipX" type="range" min="-1" max="1" step="0.05" value="0" />
+          </div>
+          <div class="pool-preset-row">
+            <button id="pool-center-tip" type="button" class="icon-button" title="恢复中杆" aria-label="恢复中杆"><i data-lucide="crosshair" aria-hidden="true"></i></button>
+            <output id="pool-tip-description">中杆</output>
+          </div>
+          <div class="control-group">
+            <div class="control-heading"><label for="pool-sliding">滑动摩擦</label><output id="pool-sliding-output">0.200</output></div>
+            <input id="pool-sliding" data-pool-setting="sliding" type="range" min="0.12" max="0.3" step="0.005" value="0.2" />
+          </div>
+          <div class="control-group">
+            <div class="control-heading"><label for="pool-rolling">滚动摩擦</label><output id="pool-rolling-output">0.010</output></div>
+            <input id="pool-rolling" data-pool-setting="rolling" type="range" min="0.006" max="0.02" step="0.001" value="0.01" />
+          </div>
+          <button id="pool-reset-cloth" type="button" class="icon-button" title="恢复默认台呢" aria-label="恢复默认台呢"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button>
+        </fieldset>
+      </aside>
+      <aside id="settings-panel" class="side-panel" aria-labelledby="settings-title" hidden>
+        <div class="side-panel__header">
+          <div>
+            <p class="eyebrow">SCENE CONTROL</p>
+            <h2 id="settings-title">场景设置</h2>
+          </div>
+          <button
+            class="icon-button panel-close"
+            type="button"
+            aria-label="关闭设置"
+            title="关闭"
+            data-close-panel="settings-panel"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="control-group">
+          <div class="control-heading">
+            <span>渲染质量</span>
+            <output id="quality-output">自动</output>
+          </div>
+          <div class="segmented-control segmented-control--panel" role="group" aria-label="渲染质量">
+            <button class="segment is-active" type="button" data-quality="auto" aria-pressed="true">
+              自动
+            </button>
+            <button class="segment" type="button" data-quality="high" aria-pressed="false">
+              高
+            </button>
+            <button class="segment" type="button" data-quality="low" aria-pressed="false">
+              低
+            </button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-heading">
+            <span>天气氛围</span>
+            <output id="weather-output">晴朗</output>
+          </div>
+          <div class="segmented-control segmented-control--panel" role="group" aria-label="天气氛围">
+            <button class="segment is-active" type="button" data-weather="clear" aria-pressed="true">
+              晴朗
+            </button>
+            <button class="segment" type="button" data-weather="cloudy" aria-pressed="false">
+              多云
+            </button>
+            <button class="segment" type="button" data-weather="overcast" aria-pressed="false">
+              阴天
+            </button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-heading">
+            <span>潮位节律</span>
+            <output id="tide-output">自动 · 中潮</output>
+          </div>
+          <div class="segmented-control segmented-control--panel" role="group" aria-label="潮位节律">
+            <button class="segment" type="button" data-tide="low" aria-pressed="false">
+              退潮
+            </button>
+            <button class="segment is-active" type="button" data-tide="auto" aria-pressed="true">
+              自动
+            </button>
+            <button class="segment" type="button" data-tide="high" aria-pressed="false">
+              涨潮
+            </button>
+          </div>
+        </div>
+
+        <label class="range-control" for="wave-speed">
+          <span>
+            <span>海浪速度</span>
+            <output id="wave-output">0.55</output>
+          </span>
+          <input id="wave-speed" type="range" min="0.2" max="1.2" step="0.05" value="0.55" />
+        </label>
+
+        <label class="range-control" for="ocean-swell-strength">
+          <span>
+            <span>远海涌浪</span>
+            <output id="ocean-swell-output">0.42</output>
+          </span>
+          <input id="ocean-swell-strength" type="range" min="0" max="1" step="0.01" value="0.42" />
+        </label>
+
+        <label class="range-control" for="wind-strength">
+          <span>
+            <span>海风强度</span>
+            <output id="wind-output">0.60</output>
+          </span>
+          <input id="wind-strength" type="range" min="0" max="1.2" step="0.05" value="0.60" />
+        </label>
+
+        <label class="range-control" for="foam-strength">
+          <span>
+            <span>潮线泡沫</span>
+            <output id="foam-output">0.85</output>
+          </span>
+          <input id="foam-strength" type="range" min="0" max="1.3" step="0.05" value="0.85" />
+        </label>
+
+        <label class="toggle-control" for="shadow-toggle">
+          <span>
+            <strong>动态阴影</strong>
+            <small>光照与场景物体阴影</small>
+          </span>
+          <input id="shadow-toggle" type="checkbox" checked />
+          <span class="toggle-control__track" aria-hidden="true"></span>
+        </label>
+
+        <label class="toggle-control" for="bloom-toggle">
+          <span>
+            <strong>柔光泛光</strong>
+            <small>默认关闭</small>
+          </span>
+          <input id="bloom-toggle" type="checkbox" />
+          <span class="toggle-control__track" aria-hidden="true"></span>
+        </label>
+
+        <label class="toggle-control" for="rain-toggle">
+          <span>
+            <strong>立体雨幕</strong>
+            <small>独立雨丝粒子效果</small>
+          </span>
+          <input id="rain-toggle" type="checkbox" />
+          <span class="toggle-control__track" aria-hidden="true"></span>
+        </label>
+
+        <label class="toggle-control" for="footstep-audio-toggle">
+          <span>
+            <strong>漫步脚步声</strong>
+            <small>沙地 / 木栈道 · 默认静音</small>
+          </span>
+          <input id="footstep-audio-toggle" type="checkbox" />
+          <span class="toggle-control__track" aria-hidden="true"></span>
+        </label>
+
+        <div id="camera-bookmarks" class="control-group camera-bookmarks">
+          <div class="control-heading">
+            <span>构图书签</span>
+            <output id="bookmark-output">槽位 1 · 空</output>
+          </div>
+          <div class="segmented-control segmented-control--panel" role="group" aria-label="构图书签槽位">
+            <button class="segment is-active" type="button" data-bookmark-slot="1" aria-pressed="true">1</button>
+            <button class="segment" type="button" data-bookmark-slot="2" aria-pressed="false">2</button>
+            <button class="segment" type="button" data-bookmark-slot="3" aria-pressed="false">3</button>
+          </div>
+          <div class="bookmark-actions">
+            <button id="bookmark-save" class="tool-button" type="button">
+              <i data-lucide="save" aria-hidden="true"></i>
+              <span>保存当前</span>
+            </button>
+            <button id="bookmark-restore" class="tool-button" type="button" disabled>
+              <i data-lucide="locate-fixed" aria-hidden="true"></i>
+              <span>前往</span>
+            </button>
+            <button id="bookmark-delete" class="tool-button bookmark-delete" type="button" disabled>
+              <i data-lucide="trash-2" aria-hidden="true"></i>
+              <span>删除</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="asset-import-control" class="control-group asset-import" aria-busy="false">
+          <div class="control-heading">
+            <span>本地资源</span>
+            <output id="asset-output">未导入</output>
+          </div>
+          <div class="asset-import__actions">
+            <button id="import-model" class="tool-button" type="button">
+              <i data-lucide="box" aria-hidden="true"></i>
+              <span>导入模型</span>
+            </button>
+            <button id="import-texture" class="tool-button" type="button">
+              <i data-lucide="image-up" aria-hidden="true"></i>
+              <span>导入贴图</span>
+            </button>
+            <button id="remove-asset" class="tool-button tool-button--quiet" type="button" disabled>
+              <i data-lucide="trash-2" aria-hidden="true"></i>
+              <span>移除导入</span>
+            </button>
+          </div>
+          <div id="asset-transform-control" class="asset-transform" hidden>
+            <div class="control-heading asset-transform__heading">
+              <span>场景布置</span>
+              <button
+                id="asset-transform-reset"
+                class="icon-button asset-transform__reset"
+                type="button"
+                aria-label="重置导入位置"
+                title="重置导入位置"
+              >
+                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="asset-transform__controls">
+              <label class="asset-transform__range" for="asset-position-x">
+                <span>横向位置 X</span>
+                <output id="asset-position-x-output">2.0</output>
+                <input
+                  id="asset-position-x"
+                  type="range"
+                  min="-32"
+                  max="32"
+                  step="0.5"
+                  value="2"
+                  data-asset-transform="x"
+                  data-output="asset-position-x-output"
+                />
+              </label>
+              <label class="asset-transform__range" for="asset-position-z">
+                <span>纵深位置 Z</span>
+                <output id="asset-position-z-output">25.0</output>
+                <input
+                  id="asset-position-z"
+                  type="range"
+                  min="14"
+                  max="44"
+                  step="0.5"
+                  value="25"
+                  data-asset-transform="z"
+                  data-output="asset-position-z-output"
+                />
+              </label>
+              <label class="asset-transform__range" for="asset-rotation">
+                <span>水平旋转</span>
+                <output id="asset-rotation-output">0°</output>
+                <input
+                  id="asset-rotation"
+                  type="range"
+                  min="-180"
+                  max="180"
+                  step="5"
+                  value="0"
+                  data-asset-transform="rotation"
+                  data-output="asset-rotation-output"
+                />
+              </label>
+              <label class="asset-transform__range" for="asset-scale">
+                <span>整体缩放</span>
+                <output id="asset-scale-output">1.00×</output>
+                <input
+                  id="asset-scale"
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.05"
+                  value="1"
+                  data-asset-transform="scale"
+                  data-output="asset-scale-output"
+                />
+              </label>
+            </div>
+          </div>
+          <div id="asset-animation-control" class="asset-animation" hidden>
+            <div class="control-heading asset-animation__heading">
+              <span>模型动画</span>
+              <output id="asset-animation-output">播放中</output>
+            </div>
+            <div class="asset-animation__toolbar">
+              <select id="asset-animation-select" aria-label="选择模型动画"></select>
+              <button
+                id="asset-animation-toggle"
+                class="icon-button asset-animation__button"
+                type="button"
+                aria-label="暂停动画"
+                title="暂停动画"
+              >
+                <i data-lucide="pause" aria-hidden="true"></i>
+              </button>
+              <button
+                id="asset-animation-restart"
+                class="icon-button asset-animation__button"
+                type="button"
+                aria-label="从头播放"
+                title="从头播放"
+              >
+                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+              </button>
+            </div>
+            <label class="asset-animation__speed" for="asset-animation-speed">
+              <span>动画倍速</span>
+              <output id="asset-animation-speed-output">1.00×</output>
+              <input
+                id="asset-animation-speed"
+                type="range"
+                min="0.25"
+                max="2"
+                step="0.25"
+                value="1"
+              />
+            </label>
+          </div>
+          <input
+            id="model-file"
+            type="file"
+            accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+            hidden
+          />
+          <input
+            id="texture-file"
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp,.avif,image/png,image/jpeg,image/webp,image/avif"
+            hidden
+          />
+        </div>
+      </aside>
+
+      <aside id="about-panel" class="side-panel" aria-labelledby="about-title" hidden>
+        <div class="side-panel__header">
+          <div>
+            <p class="eyebrow">ABOUT THE SCENE</p>
+            <h2 id="about-title">潮汐沙岸</h2>
+          </div>
+          <button
+            class="icon-button panel-close"
+            type="button"
+            aria-label="关闭场景信息"
+            title="关闭"
+            data-close-panel="about-panel"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <p class="about-copy">
+          一处实时生成的海岸空间。天空、水面与潮线共享同一太阳方向，动态潮位同步驱动
+          湿沙、泡沫和漫步岸线，材质细节由自定义 GLSL Shader 生成。
+        </p>
+        <dl class="tech-list">
+          <div>
+            <dt>ENGINE</dt>
+            <dd>Three.js r160</dd>
+          </div>
+          <div>
+            <dt>RENDERER</dt>
+            <dd>WebGL / PBR</dd>
+          </div>
+          <div>
+            <dt>SHADER</dt>
+            <dd>Sand / Water / Cloud</dd>
+          </div>
+          <div>
+            <dt>INTERACTION</dt>
+            <dd>Raycaster / Local Import</dd>
+          </div>
+        </dl>
+      </aside>
+
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

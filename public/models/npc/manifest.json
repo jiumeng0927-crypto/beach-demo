@@ -1,0 +1,28 @@
+[
+  {
+    "file": "casual-female.glb",
+    "author": "Quaternius",
+    "pack": "Ultimate Animated Character Pack",
+    "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+    "license": "CC0-1.0",
+    "modificationsLicense": "MIT",
+    "meshTriangles": 12874,
+    "sourceFile": "Casual_Female.blend",
+    "sourceSha256": "df3dae4a16a7e331c0b7662f768cb4eabe8fb0863e9ab09cbfdf3031cf8d8955",
+    "sha256": "eac45990c96f300ea97e2eaeb4def556040517b3216af735a03cf218e9df4fad",
+    "modifications": "One-level subdivision, 40% decimation and smooth normals; woven sun hat, collecting bag, straps and canvas shoes; single vertex-color material; original Idle, Walk and Victory rig retained. Added geometry released under MIT."
+  },
+  {
+    "file": "casual-male.glb",
+    "author": "Quaternius",
+    "pack": "Ultimate Animated Character Pack",
+    "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+    "license": "CC0-1.0",
+    "modificationsLicense": "MIT",
+    "meshTriangles": 12864,
+    "sourceFile": "Casual_Male.blend",
+    "sourceSha256": "ca9c264a4549eb664c6945db053ea2db1d0809a98ffc55cc2800e5dd09ecf55f",
+    "sha256": "af9ebc1130ec7c28ba9e5228ffa1aa37fd2ae8d91873f9a65b58e94afa075643",
+    "modifications": "One-level subdivision, 40% decimation and smooth normals; coastal cap, sunglasses and canvas shoes; single vertex-color material; original Idle, Walk and Victory rig retained. Added geometry released under MIT."
+  }
+]
