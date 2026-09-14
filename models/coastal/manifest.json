@@ -1,0 +1,315 @@
+[
+  {
+    "id": "wooden_picnic_table",
+    "name": "Wooden Picnic Table",
+    "authors": {
+      "Ulan Cabanilla": "All"
+    },
+    "source": "https://polyhaven.com/a/wooden_picnic_table",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "wooden_picnic_table.glb",
+    "dependencies": [
+      {
+        "path": "wooden_picnic_table.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wooden_picnic_table/wooden_picnic_table_1k.gltf",
+        "md5": "6da01f8a75e559f356b494059f7b0eda",
+        "bytes": 5099
+      },
+      {
+        "path": "textures/wooden_picnic_table_top_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_picnic_table/wooden_picnic_table_top_arm_1k.jpg",
+        "md5": "7455dbd1d31d365961ff55b7a2a67186",
+        "bytes": 747432
+      },
+      {
+        "path": "textures/wooden_picnic_table_top_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_picnic_table/wooden_picnic_table_top_nor_gl_1k.jpg",
+        "md5": "cab70a224d5b87bcb6c0595e14565626",
+        "bytes": 625681
+      },
+      {
+        "path": "wooden_picnic_table.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/wooden_picnic_table/wooden_picnic_table.bin",
+        "md5": "5d52db76187b9990c328f79612eafe5b",
+        "bytes": 279116
+      },
+      {
+        "path": "textures/wooden_picnic_table_bottom_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_picnic_table/wooden_picnic_table_bottom_arm_1k.jpg",
+        "md5": "11af6815971a16983c1e70103cd8300e",
+        "bytes": 699984
+      },
+      {
+        "path": "textures/wooden_picnic_table_top_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_picnic_table/wooden_picnic_table_top_diff_1k.jpg",
+        "md5": "5ad2a2cb0ff9f55602ea0ad23096116f",
+        "bytes": 722582
+      },
+      {
+        "path": "textures/wooden_picnic_table_bottom_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_picnic_table/wooden_picnic_table_bottom_nor_gl_1k.jpg",
+        "md5": "6b9ad57ca60a3dc5bc5e6e57acfd6cc9",
+        "bytes": 548315
+      },
+      {
+        "path": "textures/wooden_picnic_table_bottom_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_picnic_table/wooden_picnic_table_bottom_diff_1k.jpg",
+        "md5": "496b544a3dded845915431cef92e2f7d",
+        "bytes": 680087
+      }
+    ],
+    "sourceTriangles": 10210,
+    "triangles": 4499,
+    "textureLimit": 1024,
+    "bytes": 1080324,
+    "sha256": "d99f29c9cc8ba959cc6af956cf3c7a5c14670a43793c45b77d0544a7ccde5289",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  },
+  {
+    "id": "wooden_crate_02",
+    "name": "Wooden Crate 02",
+    "authors": {
+      "James Ray Cock": "modeling",
+      "Jurita Burger": "graphic design"
+    },
+    "source": "https://polyhaven.com/a/wooden_crate_02",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "wooden_crate_02.glb",
+    "dependencies": [
+      {
+        "path": "wooden_crate_02.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wooden_crate_02/wooden_crate_02_1k.gltf",
+        "md5": "a69eb62fd20e6badb6bb56f052930e06",
+        "bytes": 4150
+      },
+      {
+        "path": "textures/wooden_crate_02_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_crate_02/wooden_crate_02_diff_1k.jpg",
+        "md5": "45bca8f49da9d541e06bc926ab001c81",
+        "bytes": 716110
+      },
+      {
+        "path": "textures/wooden_crate_02_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_crate_02/wooden_crate_02_arm_1k.jpg",
+        "md5": "a7537612dbfb7fd25e756074eec5624e",
+        "bytes": 819577
+      },
+      {
+        "path": "wooden_crate_02.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wooden_crate_02/wooden_crate_02.bin",
+        "md5": "08d98507231cdeda1070d1a2d0646254",
+        "bytes": 150064
+      },
+      {
+        "path": "textures/wooden_crate_02_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_crate_02/wooden_crate_02_nor_gl_1k.jpg",
+        "md5": "314226b31765168cd8070898f8a7e18e",
+        "bytes": 546319
+      }
+    ],
+    "sourceTriangles": 5176,
+    "triangles": 1798,
+    "textureLimit": 512,
+    "bytes": 222924,
+    "sha256": "47190d797e814fc2f35e612782b47412cad094411e128012f221f6627b50af74",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  },
+  {
+    "id": "plastic_crate_01",
+    "name": "Plastic Crate 01",
+    "authors": {
+      "PierreB3D": "All"
+    },
+    "source": "https://polyhaven.com/a/plastic_crate_01",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "plastic_crate_01.glb",
+    "dependencies": [
+      {
+        "path": "plastic_crate_01.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/plastic_crate_01/plastic_crate_01_1k.gltf",
+        "md5": "af44f97630da80a640c5e6d70e72c56b",
+        "bytes": 2793
+      },
+      {
+        "path": "textures/plastic_crate_01_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/plastic_crate_01/plastic_crate_01_nor_gl_1k.jpg",
+        "md5": "95f73143467ebbf4c55fb599269edc7b",
+        "bytes": 884228
+      },
+      {
+        "path": "textures/plastic_crate_01_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/plastic_crate_01/plastic_crate_01_diff_1k.jpg",
+        "md5": "0250b2750da634e95ef44b6ffb11681e",
+        "bytes": 518288
+      },
+      {
+        "path": "textures/plastic_crate_01_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/plastic_crate_01/plastic_crate_01_arm_1k.jpg",
+        "md5": "a0c021fba58dc9fb16df94b1fdda2308",
+        "bytes": 993636
+      },
+      {
+        "path": "plastic_crate_01.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/plastic_crate_01/plastic_crate_01.bin",
+        "md5": "68c6e126a29ad4b72c21aa85f89a48c1",
+        "bytes": 789920
+      }
+    ],
+    "sourceTriangles": 18320,
+    "triangles": 2400,
+    "textureLimit": 512,
+    "bytes": 367504,
+    "sha256": "324500ca5fb639fc3672bcfa066613f4aa6756997d9ad4ca4612d7dadb823355",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  },
+  {
+    "id": "lifebuoy",
+    "name": "Lifebuoy",
+    "authors": {
+      "Hank Kaamura": "All"
+    },
+    "source": "https://polyhaven.com/a/lifebuoy",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "lifebuoy.glb",
+    "dependencies": [
+      {
+        "path": "lifebuoy.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/lifebuoy/lifebuoy_1k.gltf",
+        "md5": "295742069c8a9e56260b769322996e5b",
+        "bytes": 2724
+      },
+      {
+        "path": "textures/lifebuoy_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/lifebuoy/lifebuoy_nor_gl_1k.jpg",
+        "md5": "f8a80ee65e4776d228114f37104fbd37",
+        "bytes": 907524
+      },
+      {
+        "path": "textures/lifebuoy_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/lifebuoy/lifebuoy_diff_1k.jpg",
+        "md5": "c956bce9e530911e95771507547e8a6f",
+        "bytes": 841106
+      },
+      {
+        "path": "textures/lifebuoy_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/lifebuoy/lifebuoy_arm_1k.jpg",
+        "md5": "a00a461982827a2faaa0c6d940740d51",
+        "bytes": 614864
+      },
+      {
+        "path": "lifebuoy.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/lifebuoy/lifebuoy.bin",
+        "md5": "4e38cfbae96b6bdfd4ca4ddad06888dd",
+        "bytes": 255280
+      }
+    ],
+    "sourceTriangles": 10728,
+    "triangles": 3500,
+    "textureLimit": 512,
+    "bytes": 269152,
+    "sha256": "cb6a7c93bceda39683237cda8fbc67ce8d70b49f233007dc841f9505eb5b2449",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  },
+  {
+    "id": "lambis_shell",
+    "name": "Lambis Shell",
+    "authors": {
+      "Kuutti Siitonen": "All"
+    },
+    "source": "https://polyhaven.com/a/lambis_shell",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "lambis_shell.glb",
+    "dependencies": [
+      {
+        "path": "lambis_shell.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/lambis_shell/lambis_shell_1k.gltf",
+        "md5": "ba61498d80a33845f25f1a16604e1f65",
+        "bytes": 2772
+      },
+      {
+        "path": "lambis_shell.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/lambis_shell/lambis_shell.bin",
+        "md5": "b895fc766f2ef8adfeaa356833ec90c1",
+        "bytes": 310540
+      },
+      {
+        "path": "textures/lambis_shell_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/lambis_shell/lambis_shell_diff_1k.jpg",
+        "md5": "9d73630d4436fc8afd1d314e1555a88f",
+        "bytes": 785669
+      },
+      {
+        "path": "textures/lambis_shell_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/lambis_shell/lambis_shell_arm_1k.jpg",
+        "md5": "8b8ba38ce52a5eefcfa6c313d5ffdf54",
+        "bytes": 567463
+      },
+      {
+        "path": "textures/lambis_shell_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/lambis_shell/lambis_shell_nor_gl_1k.jpg",
+        "md5": "2499c0c824ecb4b58349ff88ec2a64c1",
+        "bytes": 582208
+      }
+    ],
+    "sourceTriangles": 12498,
+    "triangles": 2200,
+    "textureLimit": 512,
+    "bytes": 249472,
+    "sha256": "9f4891395a9ac464b793eb5175e55b0b3ae5b78d36fe5aefb857f1e410f1b4e2",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  },
+  {
+    "id": "boulder_01",
+    "name": "Boulder 01",
+    "authors": {
+      "Rico Cilliers": "All"
+    },
+    "source": "https://polyhaven.com/a/boulder_01",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "boulder_01.glb",
+    "dependencies": [
+      {
+        "path": "boulder_01.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/boulder_01/boulder_01_1k.gltf",
+        "md5": "26e2eef4a1f68c9557c65cd375b21d6c",
+        "bytes": 2773
+      },
+      {
+        "path": "textures/boulder_01_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/boulder_01/boulder_01_arm_1k.jpg",
+        "md5": "d632159982cc3121ed3d69b89a122146",
+        "bytes": 659386
+      },
+      {
+        "path": "textures/boulder_01_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/boulder_01/boulder_01_diff_1k.jpg",
+        "md5": "25f8a843f13369d56d37f49db05ea8c3",
+        "bytes": 987467
+      },
+      {
+        "path": "boulder_01.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/boulder_01/boulder_01.bin",
+        "md5": "27a19fa031d8b4c3a09261f19c444dc5",
+        "bytes": 2938808
+      },
+      {
+        "path": "textures/boulder_01_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/boulder_01/boulder_01_nor_gl_1k.jpg",
+        "md5": "0c4da644d901144b53e4fe2446f3c389",
+        "bytes": 1183552
+      }
+    ],
+    "sourceTriangles": 66122,
+    "triangles": 3978,
+    "textureLimit": 512,
+    "bytes": 357888,
+    "sha256": "517486e45b11a3cd7cd11db947b032f5b4be3e80de6f576b364a2a416db0dcdd",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  }
+]

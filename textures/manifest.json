@@ -1,0 +1,21 @@
+[
+  {
+    "file": "coastal-sky-2k.hdr",
+    "author": "Greg Zaal; Jarod Guest",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky",
+    "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/kloofendal_48d_partly_cloudy_puresky_2k.hdr",
+    "md5": "2eba3a4d7eeb23cbfbeca364c97e7980",
+    "size": 5451493,
+    "sha256": "5244534e9cf5b606f2ff513aa00ddb161b0a4826ffd88a0d3bd03ac29247d198"
+  },
+  {
+    "file": "water-normal-three-r160.jpg",
+    "author": "Three.js authors",
+    "license": "MIT",
+    "source": "https://github.com/mrdoob/three.js/blob/r160/examples/textures/waternormals.jpg",
+    "url": "https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/textures/waternormals.jpg",
+    "sha256": "add9912b158a4fe9c12421745babe68c44c8af75631ac4837236cb2a03bc373f",
+    "size": 248813
+  }
+]
