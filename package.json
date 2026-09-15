@@ -1,6 +1,6 @@
 {
   "name": "tideline-beach-experience",
-  "version": "0.48.0",
+  "version": "0.49.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -40,6 +40,7 @@
     "test:models": "node scripts/scene-modeling-check.mjs",
     "test:coastal": "node scripts/coastal-assets-check.mjs",
     "test:ocean-npc": "node scripts/ocean-npc-check.mjs",
+    "test:npc-quality": "node scripts/npc-quality-check.mjs",
     "test:water-layout": "node scripts/water-layout-check.mjs",
     "test:shore-detail": "node scripts/shore-detail-check.mjs",
     "test:swash": "node scripts/shore-swash-check.mjs",

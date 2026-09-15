@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { assetUrl } from './assetUrl.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import { applyNpcPalette, createNpcAccessory, NPC_APPEARANCES } from './NpcAppearance.js';
 
 export const NPC_SPECS = Object.freeze([
   { id: 'lin', name: '小林', role: '海岸拾光客', file: 'casual-female.glb', x: 9, z: 23, heading: 0.5 },
@@ -16,13 +17,25 @@ export const NPC_SPECS = Object.freeze([
     route: [4, 28], speed: 0.59, text: '不用赶路。沿着海边走一走，等光线慢慢变暖就很好。' },
   { id: 'yu', name: '小屿', role: '潮岸小铺店主', file: 'casual-male-crowd.glb', x: 17, z: 74.2, heading: 3.05, street: true, merchant: true, height: 1.88,
     text: '拾到的海玻璃、空贝壳和瓶罐都可以在这里登记寄售，也可以换些海岸纪念品。' },
-  { id: 'qing', name: '青青', role: '咖啡店店员', file: 'casual-female-crowd.glb', x: -27.5, z: 74.4, heading: 3.0, street: true, height: 1.82,
+  { id: 'qing', name: '青青', role: '咖啡店店员', file: 'casual-female-crowd.glb', x: -28, z: 72.2, heading: 3.0, street: true, height: 1.82,
     text: '咖啡刚磨好。沿街慢慢走，转过身就是开阔的海面。' },
   { id: 'ran', name: '阿冉', role: '净滩志愿者', file: 'casual-male.glb', x: -36, z: 50.5, heading: 1.57, height: 1.91,
     route: [-36, -20], speed: 0.52, text: '我在整理潮线附近的瓶罐。捡到后可以带去潮岸小铺登记换潮贝。' },
-  { id: 'ning', name: '宁宁', role: '沙滩游客', file: 'casual-female.glb', x: 17, z: 43.5, heading: 1.57, height: 1.80,
+  { id: 'ning', name: '宁宁', role: '沙滩游客', file: 'casual-female.glb', x: 17, z: 40.8, heading: 1.57, height: 1.80,
     route: [17, 28], speed: 0.46, text: '这里离躺椅和瞭望点都很近，傍晚看海最好。' },
 ]);
+
+export function getNpcRouteState(spec, routeTime) {
+  const distance = Math.abs(spec.route[1] - spec.route[0]);
+  const duration = distance / spec.speed;
+  const leg = duration + 2;
+  const phase = routeTime % (leg * 2);
+  const reverse = phase >= leg;
+  const local = phase % leg;
+  const progress = Math.min(1, local / duration);
+  return { x: THREE.MathUtils.lerp(spec.route[reverse ? 1 : 0], spec.route[reverse ? 0 : 1], progress),
+    reverse, moving: local < duration };
+}
 
 function release(models) {
   const resources = new Set();
@@ -61,6 +74,10 @@ export class BeachNpcSystem extends EventTarget {
     this.inputController = new AbortController();
     this.ray = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
+    this.collisionProbe = new THREE.Vector3();
+    this.previousProbe = new THREE.Vector3();
+    this.poseBox = new THREE.Box3();
+    this.objectBox = new THREE.Box3();
     this.bindWorld(experience.world);
     this.bindInput();
     this.ready = this.load();
@@ -85,6 +102,9 @@ export class BeachNpcSystem extends EventTarget {
           if (!['Idle', 'Walk', 'Victory'].every(name => gltf.animations.some(clip => clip.name === name))) throw new Error('Missing authored clips');
           const model = cloneSkeleton(gltf.scene), root = new THREE.Group();
           root.name = `Visitor-${spec.id}`;
+          const appearance = NPC_APPEARANCES[spec.id];
+          const gender = spec.file.includes('female') ? 'female' : 'male';
+          const recoloredVertices = applyNpcPalette(model, appearance, gender);
           const mixer = new THREE.AnimationMixer(model);
           const actions = Object.fromEntries(gltf.animations.map(clip => [clip.name, mixer.clipAction(clip)]));
           actions.Idle.play();
@@ -93,25 +113,30 @@ export class BeachNpcSystem extends EventTarget {
           model.traverse(o => o.skeleton?.update());
           const bounds = new THREE.Box3().setFromObject(model, true), size = bounds.getSize(new THREE.Vector3());
           const height = spec.height ?? 1.9, scale = height / size.y;
-          model.scale.setScalar(scale);
-          model.position.set(-(bounds.min.x + bounds.max.x) * scale / 2, -bounds.min.y * scale,
-            -(bounds.min.z + bounds.max.z) * scale / 2);
-          root.add(model);
+          const scaleX = scale * appearance.width, scaleZ = scale * appearance.depth;
+          model.scale.set(scaleX, scale, scaleZ);
+          model.getObjectByName('Head')?.scale.set(...appearance.headScale);
+          model.position.set(-(bounds.min.x + bounds.max.x) * scaleX / 2, -bounds.min.y * scale,
+            -(bounds.min.z + bounds.max.z) * scaleZ / 2);
+          const accessory = createNpcAccessory(appearance);
+          root.add(model, accessory);
           root.position.set(spec.x, this.world.getWalkSurfaceHeight(spec.x, spec.z), spec.z);
           root.rotation.y = spec.heading;
           model.traverse((mesh) => {
             if (!mesh.isMesh) return;
             mesh.frustumCulled = false;
             mesh.receiveShadow = true;
-            mesh.material.envMapIntensity = 0.55;
-            mesh.material.roughness = 0.88;
           });
           const collider = { type: 'circle', name: `visitor-${spec.id}`, x: spec.x, z: spec.z,
-            radius: 0.36, minY: root.position.y, maxY: root.position.y + height };
-          this.items.push({ spec, root, model, mixer, actions, collider, greeting: 0, routeTime: 0, walking: false });
+            radius: 0.39 * Math.max(appearance.width, appearance.depth), minY: root.position.y, maxY: root.position.y + height };
+          const item = { spec, appearance, root, model, accessory, mixer, actions, collider, greeting: 0,
+            routeTime: 0, walking: false, yielding: false, blockedBy: [], poseClock: 0,
+            groundClearance: 0, groundLift: 0, recoloredVertices };
+          this.items.push(item);
           mixer.update(this.items.length * 0.27);
           this.world.registerCameraCollider(collider);
           this.root.add(root);
+          this.updateGrounding(item, true);
           this.setShadows(this.experience.shadowsEnabled && this.experience.effectiveQuality === 'high');
         } catch (error) {
           if (!this.disposed) this.errors.push({ id: spec.id, message: error.message });
@@ -129,7 +154,9 @@ export class BeachNpcSystem extends EventTarget {
     world.registerReflectionExclusion(this.root);
     for (const item of this.items) {
       world.registerCameraCollider(item.collider);
+      item.groundLift = 0;
       item.root.position.y = world.getWalkSurfaceHeight(item.root.position.x, item.root.position.z);
+      this.updateGrounding(item, true);
       item.collider.minY = item.root.position.y;
       item.collider.maxY = item.root.position.y + (item.spec.height ?? 1.9);
     }
@@ -317,6 +344,42 @@ export class BeachNpcSystem extends EventTarget {
     return null;
   }
 
+  canAdvance(item, x, z) {
+    const height = item.spec.height ?? 1.9;
+    const ground = this.world.getWalkSurfaceHeight(x, z);
+    this.collisionProbe.set(x, ground + height, z);
+    this.previousProbe.set(item.root.position.x, item.root.position.y + height, item.root.position.z);
+    const collision = this.world.resolveCameraPosition(this.collisionProbe, {
+      previousPosition: this.previousProbe,
+      radius: item.collider.radius + 0.08,
+      eyeHeight: height,
+      ignore: item.collider,
+    });
+    item.blockedBy = collision?.names ?? [];
+    return !collision;
+  }
+
+  updateGrounding(item, snap = false) {
+    const ground = this.world.getWalkSurfaceHeight(item.root.position.x, item.root.position.z);
+    item.root.position.y = ground + item.groundLift;
+    item.root.updateMatrixWorld(true);
+    this.poseBox.makeEmpty();
+    item.model.traverse((object) => {
+      if (!object.isSkinnedMesh) return;
+      object.skeleton.update();
+      object.computeBoundingBox();
+      this.objectBox.copy(object.boundingBox).applyMatrix4(object.matrixWorld);
+      this.poseBox.union(this.objectBox);
+    });
+    const relativeBottom = this.poseBox.isEmpty() ? 0 : this.poseBox.min.y - item.root.position.y;
+    const desiredLift = THREE.MathUtils.clamp(0.025 - relativeBottom, 0, 0.12);
+    item.groundLift = snap || desiredLift > item.groundLift
+      ? desiredLift
+      : THREE.MathUtils.lerp(item.groundLift, desiredLift, 0.35);
+    item.groundClearance = relativeBottom + item.groundLift;
+    item.root.position.y = ground + item.groundLift;
+  }
+
   update(delta) {
     if (!this.enabled || this.disposed) return;
     const camera = this.experience.camera;
@@ -326,26 +389,25 @@ export class BeachNpcSystem extends EventTarget {
     for (const item of this.items) {
       const { spec } = item;
       if (spec.route && this.activeId !== spec.id && item.greeting <= 0) {
-        const yielding = this.experience.cameraMode === 'walk'
+        const yieldingToPlayer = this.experience.cameraMode === 'walk'
           && Math.hypot(camera.position.x - item.root.position.x, camera.position.z - item.root.position.z) < 1.25;
-        if (!yielding) item.routeTime += delta;
-        const duration = (spec.route[1] - spec.route[0]) / spec.speed, leg = duration + 2;
-        const phase = item.routeTime % (leg * 2), reverse = phase >= leg;
-        const local = phase % leg, t = Math.min(1, local / duration);
-        item.root.position.x = THREE.MathUtils.lerp(spec.route[reverse ? 1 : 0], spec.route[reverse ? 0 : 1], t);
-        item.root.position.y = this.world.getWalkSurfaceHeight(item.root.position.x, spec.z);
-        const heading = reverse ? -Math.PI / 2 : Math.PI / 2;
+        const proposed = getNpcRouteState(spec, item.routeTime + delta);
+        const blocked = proposed.moving && !yieldingToPlayer && !this.canAdvance(item, proposed.x, spec.z);
+        if (yieldingToPlayer) item.blockedBy = [];
+        if (!yieldingToPlayer && !blocked) item.routeTime += delta;
+        const route = getNpcRouteState(spec, item.routeTime);
+        item.root.position.x = route.x;
+        const heading = route.reverse ? -Math.PI / 2 : Math.PI / 2;
         const turn = Math.atan2(Math.sin(heading - item.root.rotation.y), Math.cos(heading - item.root.rotation.y));
         item.root.rotation.y += turn * (1 - Math.exp(-delta * 6));
-        const walking = local < duration && !yielding;
+        const walking = route.moving && !yieldingToPlayer && !blocked;
+        item.yielding = yieldingToPlayer || blocked;
         if (walking !== item.walking) {
           item.actions[walking ? 'Idle' : 'Walk'].fadeOut(0.25);
           item.actions[walking ? 'Walk' : 'Idle'].reset().fadeIn(0.25).play();
           item.actions.Walk.timeScale = spec.speed / 0.75;
           item.walking = walking;
         }
-        Object.assign(item.collider, { x: item.root.position.x, z: item.root.position.z,
-          minY: item.root.position.y, maxY: item.root.position.y + (spec.height ?? 1.9) });
       }
       item.mixer.update(delta);
       if (item.greeting > 0) {
@@ -355,6 +417,15 @@ export class BeachNpcSystem extends EventTarget {
           item.actions.Idle.reset().fadeIn(0.25).play();
         }
       }
+      item.poseClock += delta;
+      if (item.poseClock >= 0.12) {
+        item.poseClock %= 0.12;
+        this.updateGrounding(item);
+      } else {
+        item.root.position.y = this.world.getWalkSurfaceHeight(item.root.position.x, item.root.position.z) + item.groundLift;
+      }
+      Object.assign(item.collider, { x: item.root.position.x, z: item.root.position.z,
+        minY: item.root.position.y, maxY: item.root.position.y + (spec.height ?? 1.9) });
     }
     const visible = this.items.filter(item => {
       this.visibilitySphere.center.copy(item.root.position).y += 1;
@@ -363,9 +434,13 @@ export class BeachNpcSystem extends EventTarget {
       - camera.position.distanceToSquared(b.root.position));
     const limit = this.experience.effectiveQuality === 'low' ? 4 : visible.length;
     const shown = new Set(visible.slice(0, limit));
+    const detailed = new Set(visible.slice(0, this.experience.effectiveQuality === 'low' ? 4 : 8));
     const active = this.items.find(item => item.spec.id === this.activeId);
-    if (active) shown.add(active);
-    for (const item of this.items) item.root.visible = shown.has(item);
+    if (active) { shown.add(active); detailed.add(active); }
+    for (const item of this.items) {
+      item.root.visible = shown.has(item);
+      item.accessory.visible = detailed.has(item);
+    }
   }
 
   setShadows(enabled) { this.root.traverse(o => { if (o.isMesh) o.castShadow = enabled; }); }
@@ -374,7 +449,9 @@ export class BeachNpcSystem extends EventTarget {
     return { enabled: this.enabled, loaded: this.items.length, errors: this.errors, activeId: this.activeId,
       questAccepted: this.questAccepted, questClaimed: this.questClaimed, disposed: this.disposed,
       sources: this.sources.size,
-      items: this.items.map(i => ({ id: i.spec.id, name: i.spec.name, position: i.root.position.toArray(), walking: i.walking, visible: i.root.visible,
+      items: this.items.map(i => ({ id: i.spec.id, name: i.spec.name, position: i.root.position.toArray(), walking: i.walking,
+        yielding: i.yielding, blockedBy: i.blockedBy, visible: i.root.visible, appearance: i.appearance.label,
+        kit: i.appearance.kit, headScale: i.appearance.headScale, recoloredVertices: i.recoloredVertices, groundClearance: i.groundClearance,
         clips: Object.keys(i.actions), animationTime: i.mixer.time, uuid: i.root.uuid })) };
   }
   dispose() {

@@ -7,6 +7,7 @@ const checks = [
   'water-reflection-quality', 'water-normal-quality', 'moon-quality',
   'star-quality', 'atmosphere-visibility', 'rain-lifecycle',
   'celestial-resource', 'discovery-resource', 'beach-billiards', 'character-system',
+  'npc-appearance-unit',
   'living-coast-unit',
   'billiards-presentation-unit',
   'boundary-unit',

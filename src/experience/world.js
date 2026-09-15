@@ -172,7 +172,7 @@ function resolveBoxCollider(
 function resolveCameraCollisions(
   colliders,
   position,
-  { previousPosition, radius, eyeHeight },
+  { previousPosition, radius, eyeHeight, ignore = null },
 ) {
   let collided = false;
   let normalX = 0;
@@ -184,6 +184,7 @@ function resolveCameraCollisions(
   for (let pass = 0; pass < 2; pass += 1) {
     let correctedThisPass = false;
     for (const collider of colliders) {
+      if (collider === ignore || ignore?.has?.(collider)) continue;
       if (!cameraOverlapsCollider(position, collider, eyeHeight)) continue;
       const normal =
         collider.type === 'box'
