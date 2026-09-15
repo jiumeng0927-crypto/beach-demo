@@ -799,6 +799,12 @@ kbd {
 .market-list span { color: #67776e; font-size: 12px; }
 .market-list button { grid-column: 2; grid-row: 1 / span 2; min-width: 82px; min-height: 34px; border: 1px solid #7d9d94; border-radius: 4px; background: #e2ebe5; color: #25453b; font: inherit; cursor: pointer; }
 .market-list button:disabled { opacity: .55; cursor: default; }
+.community-status { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 8px 0; border-block: 1px solid #d7e1d6; }
+.community-status span { display: grid; gap: 2px; }
+.community-status strong { color: #305f50; font-size: 14px; }
+.community-status small, .community-status output { color: #67776e; font-size: 12px; font-variant-numeric: tabular-nums; }
+.order-list .is-fulfilled { opacity: .65; }
+.order-list .is-fulfilled strong { color: #447663; }
 .commission-heading { display: flex; align-items: baseline; justify-content: space-between; margin-top: 18px; padding-bottom: 10px; border-bottom: 1px solid #d7e1d6; }
 .commission-heading span { color: #305f50; font-size: 15px; font-weight: 600; }
 .commission-heading output { color: #67776e; font-size: 13px; font-variant-numeric: tabular-nums; }

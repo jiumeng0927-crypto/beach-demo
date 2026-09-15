@@ -540,6 +540,22 @@ export class BeachDiscoveryGame extends EventTarget {
     return transaction;
   }
 
+  fulfillOrder(order) {
+    const transaction = this.campaign.deliver(
+      order?.kind,
+      order?.count,
+      order?.reward,
+      `community:${order?.id ?? 'unknown'}`,
+    );
+    if (transaction) {
+      this.dispatchEvent(new CustomEvent('markettransaction', {
+        detail: { type: 'order', ...transaction },
+      }));
+      this.dispatchProgress();
+    }
+    return transaction;
+  }
+
   isAvailable(item) {
     return item && !item.collected && (!item.lowTide || (this.tideLevel ?? 0) <= -.22);
   }

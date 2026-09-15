@@ -13,6 +13,7 @@ export class CollectionJournal {
     this.panels = { journal: this.journalPanel, market: this.marketPanel, commissions: this.commissionPanel };
     this.marketInventory = document.querySelector('#market-inventory');
     this.marketProducts = document.querySelector('#market-products');
+    this.marketOrders = document.querySelector('#market-orders');
     this.commissionList = document.querySelector('#commission-list');
     const options = { signal };
     this.button.addEventListener('click', () => this.open('journal'), options);
@@ -37,6 +38,12 @@ export class CollectionJournal {
       if (!button) return;
       experience.discovery.buyProduct(button.dataset.marketProduct); this.render();
     }, options);
+    this.marketOrders.addEventListener('click', event => {
+      const button = event.target.closest('[data-community-order]');
+      if (!button) return;
+      experience.fulfillCommunityOrder(button.dataset.communityOrder);
+      this.render();
+    }, options);
     this.commissionList.addEventListener('click', event => {
       const button = event.target.closest('[data-commission-claim]');
       if (!button) return;
@@ -50,6 +57,7 @@ export class CollectionJournal {
     }, options);
     experience.addEventListener('discoveryprogress', () => { if (this.dialog.open) this.render(); }, options);
     experience.addEventListener('commissionchange', () => { if (this.dialog.open) this.renderCommissions(); }, options);
+    experience.addEventListener('communitychange', () => { if (this.dialog.open) this.render(); }, options);
     experience.addEventListener('marketopen', () => this.open('market'), options);
     experience.addEventListener('commissionopen', () => this.open('commissions'), options);
   }
@@ -119,6 +127,33 @@ export class CollectionJournal {
       button.textContent = product.purchased ? '已拥有' : `${product.price} 潮贝`;
       button.disabled = product.purchased || !product.affordable;
       row.append(name, detail, button); this.marketProducts.append(row);
+    }
+    this.renderCommunity(economy.inventory);
+  }
+
+  renderCommunity(inventory) {
+    const state = this.experience.community?.getState(inventory);
+    if (!state) return;
+    document.querySelector('#community-level').textContent = state.level;
+    document.querySelector('#community-progress').textContent = state.nextLevelAt == null
+      ? `声望 ${state.reputation} · 最高等级`
+      : `声望 ${state.reputation} / ${state.nextLevelAt} · ${state.orderBonus ? `订单奖励 +${state.orderBonus}` : '基础结算'}`;
+    document.querySelector('#community-orders').textContent = `${state.completed} / ${state.total}`;
+    this.marketOrders.replaceChildren();
+    for (const order of state.orders) {
+      const row = document.createElement('li');
+      const name = document.createElement('strong');
+      const detail = document.createElement('span');
+      const button = document.createElement('button');
+      name.textContent = `${order.title} · ${order.npcName}`;
+      detail.textContent = `${order.kindName} × ${order.count} · ${order.reward} 潮贝`;
+      button.type = 'button';
+      button.dataset.communityOrder = order.id;
+      button.textContent = order.fulfilled ? '已交付' : order.available ? '交付' : '库存不足';
+      button.disabled = order.fulfilled || !order.available;
+      row.classList.toggle('is-fulfilled', order.fulfilled);
+      row.append(name, detail, button);
+      this.marketOrders.append(row);
     }
   }
 

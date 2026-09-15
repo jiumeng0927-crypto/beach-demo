@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { CoastalClock } from '../src/experience/CoastalClock.js';
 import { CollectionCampaign, COLLECTION_SAVE_KEY } from '../src/experience/CollectionCampaign.js';
 import { CoastalCommissionBoard, COMMISSION_SAVE_KEY } from '../src/experience/CoastalCommissionBoard.js';
+import { CoastalCommunity, COMMUNITY_SAVE_KEY } from '../src/experience/CoastalCommunity.js';
 
 const clock = new CoastalClock();
 clock.update(1800); assert.equal(clock.hour, 12); assert.equal(clock.days, 1);
@@ -58,6 +59,12 @@ const invalid = new CollectionCampaign(sites, storage);
 assert.equal(invalid.chapter, 0); assert.equal(invalid.found.size, 0); assert.equal(invalid.rewardClaimed, false);
 const denied = new CollectionCampaign(sites, { getItem() { throw Error('denied'); }, setItem() { throw Error('denied'); } });
 assert.equal(denied.collect(0, 0), true); assert.equal(denied.saved, false);
+const deliveryCampaign = new CollectionCampaign(sites);
+assert.equal(deliveryCampaign.collect(0, 0), true); assert.equal(deliveryCampaign.collect(1, 0), true);
+assert.deepEqual(deliveryCampaign.deliver('glass', 2, 20, 'test-order'), {
+  source: 'test-order', delivered: { glass: 2 }, count: 2, earned: 20, coins: 20,
+});
+assert.equal(deliveryCampaign.deliver('glass', 1, 8), null);
 
 const rewards = [];
 let commissions = new CoastalCommissionBoard({ storage, grantReward: (amount, task) => {
@@ -87,4 +94,33 @@ storage.setItem(COMMISSION_SAVE_KEY, '{broken');
 assert.equal(new CoastalCommissionBoard({ storage }).getState().day, 0);
 const deniedCommissions = new CoastalCommissionBoard({ storage: { getItem() { throw Error('denied'); }, setItem() { throw Error('denied'); } } });
 assert.equal(deniedCommissions.record('low-tide'), true); assert.equal(deniedCommissions.saved, false);
-console.log('PASS: continuous clock, collection economy, daily commissions, save migration, corrupt/denied storage');
+
+const deliveries = [];
+const npcIds = ['lin', 'ning', 'ran', 'yu', 'qing', 'fan', 'mei', 'hao', 'le'];
+let community = new CoastalCommunity({ storage, npcIds, fulfillOrder: order => {
+  deliveries.push(order); return { coins: order.reward };
+} });
+assert.deepEqual(community.getState().orders.map(order => order.id), ['lin-glass', 'ning-shell', 'ran-bottle']);
+assert.equal(community.meet('lin'), true); assert.equal(community.meet('lin'), false);
+assert.equal(community.meet('unknown'), false); assert.equal(community.getState().reputation, 1);
+assert.equal(community.fulfill('lin-glass', { glass: 1 }), null);
+assert.equal(community.fulfill('lin-glass', { glass: 2 }).order.reward, 20);
+assert.equal(community.fulfill('lin-glass', { glass: 2 }), null);
+assert.equal(deliveries.length, 1);
+assert.equal(community.getRelationship('lin').affinity, 3);
+community = new CoastalCommunity({ storage, npcIds, fulfillOrder: order => ({ coins: order.reward }) });
+assert.equal(community.getState().completed, 1); assert.equal(community.getState().reputation, 3);
+assert.equal(community.meet('ning'), true); assert.equal(community.getState().level, '熟面孔');
+assert.equal(community.getState().orderBonus, 2);
+assert.equal(community.getState().orders.find(order => order.id === 'lin-glass').reward, 20);
+assert.equal(community.syncDay(1), true); assert.equal(community.getState().completed, 0);
+assert.equal(community.getState().reputation, 4); assert.equal(community.getRelationship('lin').affinity, 3);
+assert.deepEqual(community.getState().orders.map(order => order.id), ['yu-glass', 'qing-shell', 'fan-bottle']);
+assert.equal(community.getState({ glass: 3 }).orders[0].reward, 30);
+assert.equal(community.fulfill('yu-glass', { glass: 3 }).order.reward, 30);
+assert.equal(community.getState().reputation, 6);
+storage.setItem(COMMUNITY_SAVE_KEY, '{broken');
+assert.equal(new CoastalCommunity({ storage, npcIds }).getState().reputation, 0);
+const deniedCommunity = new CoastalCommunity({ storage: { getItem() { throw Error('denied'); }, setItem() { throw Error('denied'); } }, npcIds });
+assert.equal(deniedCommunity.meet('lin'), true); assert.equal(deniedCommunity.saved, false);
+console.log('PASS: continuous clock, collection economy, daily commissions/orders, relationships, save migration, corrupt/denied storage');

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.48.0 - 2026-09-15
+
+- Add three rotating sets of NPC-authored coastal orders, giving collected items a higher-value directed-delivery path alongside immediate bulk sale.
+- Add per-NPC affinity and aggregate community reputation. Award affinity only on the first meeting per coastal day and on successful delivery; unlock four reputation tiers with future order bonuses.
+- Make delivery an atomic collection-campaign transaction with inventory, quantity, reward and duplicate validation. Preserve the actual paid reward so later reputation changes cannot rewrite completed-order history.
+- Integrate orders into both NPC conversation and the market panel, with publisher, requirement, affordability, completion and next-reputation-level feedback across desktop and mobile.
+- Persist relationships, daily greetings and paid orders in a separately validated local save. Rotate daily state with the natural coastal clock while retaining long-term relationships across days and refreshes.
+- Extend deterministic and browser regression coverage through real NPC-directed delivery, remaining bulk sale, purchase, reload and relationship-state verification. Add the corresponding learning guide and manual-upload production snapshot.
+
 ## 0.47.0 - 2026-09-15
 
 - Add a persistent daily coastal commission board with three deterministic rotations covering tides, collection, trade, billiards, weather movement and camera bookmarks.

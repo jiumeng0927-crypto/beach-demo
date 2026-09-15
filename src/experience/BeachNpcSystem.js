@@ -206,6 +206,7 @@ export class BeachNpcSystem extends EventTarget {
     this.experience.controls.enabled = false;
     item.root.rotation.y = Math.atan2(this.experience.camera.position.x - item.root.position.x,
       this.experience.camera.position.z - item.root.position.z);
+    this.experience.community?.meet(id);
     this.greet(item);
     this.dispatchEvent(new Event('dialogchange'));
     return true;
@@ -229,23 +230,39 @@ export class BeachNpcSystem extends EventTarget {
   getConversation() {
     const item = this.items.find(i => i.spec.id === this.activeId);
     if (!item) return null;
+    const inventory = this.experience.discovery.campaign.getState().economy.inventory;
+    const relationship = this.experience.community?.getRelationship(item.spec.id);
+    const order = this.experience.community?.getOrderForNpc(item.spec.id, inventory);
+    const enrich = (conversation) => {
+      const actions = [...conversation.actions];
+      let text = conversation.text;
+      if (order?.fulfilled) {
+        text += ` 今天的“${order.title}”已经交付，谢谢你。`;
+      } else if (order) {
+        text += ` 我今天需要${order.kindName} ${order.count} 件，交付可获得 ${order.reward} 枚潮贝。`;
+        if (order.available) actions.unshift({ id: 'delivery', text: `交付${order.kindName} × ${order.count}` });
+      }
+      return { ...conversation,
+        role: `${conversation.role} · ${relationship?.label ?? '初次相遇'}`,
+        text, actions };
+    };
     if (item.spec.merchant) {
       const economy = this.experience.discovery.campaign.getState().economy;
       const commissions = this.experience.commissions?.getState();
-      return { ...item.spec,
+      return enrich({ ...item.spec,
         text: `${item.spec.text} 你现在有 ${economy.inventoryTotal} 件可售物品和 ${economy.coins} 枚潮贝。今日委托已完成 ${commissions?.completed ?? 0} 项。`,
-        actions: [{ id: 'market', text: '打开海滨交易' }, { id: 'commissions', text: '查看今日委托' }, { id: 'chat', text: '询问价格' }] };
+        actions: [{ id: 'market', text: '打开海滨交易' }, { id: 'commissions', text: '查看今日委托' }, { id: 'chat', text: '询问价格' }] });
     }
-    if (item.spec.street) return { ...item.spec, text: item.spec.text,
-      actions: [{ id: 'street', text: '看看海滨小街' }, { id: 'chat', text: '聊聊海边' }] };
-    if (item.spec.text) return { ...item.spec, text: item.spec.text,
-      actions: [{ id: 'chat', text: '聊聊海边' }] };
+    if (item.spec.street) return enrich({ ...item.spec, text: item.spec.text,
+      actions: [{ id: 'street', text: '看看海滨小街' }, { id: 'chat', text: '聊聊海边' }] });
+    if (item.spec.text) return enrich({ ...item.spec, text: item.spec.text,
+      actions: [{ id: 'chat', text: '聊聊海边' }] });
     const discovery = this.experience.discovery.getDebugState();
-    if (item.spec.id === 'chen') return { ...item.spec,
+    if (item.spec.id === 'chen') return enrich({ ...item.spec,
       text: '海风正好，来台球区打一局？当前球局会原样保留。',
-      actions: [{ id: 'pool', text: '前往台球区' }, { id: 'chat', text: '聊聊海边' }] };
+      actions: [{ id: 'pool', text: '前往台球区' }, { id: 'chat', text: '聊聊海边' }] });
     const done = discovery.completed;
-    return { ...item.spec,
+    return enrich({ ...item.spec,
       text: this.questClaimed ? '标本、潮间带和净滩记录都齐了，你已经是一位净滩守护者。谢谢你照顾这片海岸。'
         : done && this.questAccepted ? '十八处海岸记录完成了！三枚徽记都属于你。'
         : this.questAccepted ? `${discovery.chapterTitle}：${discovery.collected} / 6；总记录 ${discovery.overallCollected} / 18。${discovery.chapterComplete ? '这一章完成了，接着看看下一个任务吧。' : discovery.chapter === 1 ? '潮沟里的空贝壳要等低潮才会露出来。' : '需要我指出下一处吗？'}`
@@ -253,7 +270,7 @@ export class BeachNpcSystem extends EventTarget {
       actions: this.questClaimed ? [{ id: 'chat', text: '聊聊潮汐' }]
         : done && this.questAccepted ? [{ id: 'claim', text: '完成海岸记录' }]
         : this.questAccepted ? discovery.chapterComplete ? [{ id: 'next', text: '开始下一章' }] : [{ id: 'hint', text: '下一处线索' }]
-        : [{ id: 'accept', text: '一起寻找' }] };
+        : [{ id: 'accept', text: '一起寻找' }] });
   }
 
   perform(action) {
@@ -271,6 +288,11 @@ export class BeachNpcSystem extends EventTarget {
     if (action === 'pool') { this.close(); this.experience.focusBilliards(); return 'close'; }
     if (action === 'market') return 'market';
     if (action === 'commissions') return 'commissions';
+    if (action === 'delivery') {
+      const inventory = this.experience.discovery.campaign.getState().economy.inventory;
+      const order = this.experience.community?.getOrderForNpc(this.activeId, inventory);
+      if (order && this.experience.fulfillCommunityOrder(order.id)) this.greet(item);
+    }
     if (action === 'street') { this.close(); this.experience.focusStreet(); return 'close'; }
     if (action === 'hint') {
       const site = this.experience.discovery.getDebugState().sites.find(site => site.available);

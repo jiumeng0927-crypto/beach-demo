@@ -9,7 +9,8 @@ import { BloomPostProcessor } from './BloomPostProcessor.js';
 import { CameraBookmarks } from './CameraBookmarks.js';
 import { CoastalProps } from './CoastalProps.js';
 import { CoastalCommissionBoard } from './CoastalCommissionBoard.js';
-import { BeachNpcSystem } from './BeachNpcSystem.js';
+import { CoastalCommunity } from './CoastalCommunity.js';
+import { BeachNpcSystem, NPC_SPECS } from './BeachNpcSystem.js';
 import { BeachEnvironment } from './environment.js';
 import { FreeCameraController } from './FreeCameraController.js';
 import { FootstepAudio } from './FootstepAudio.js';
@@ -111,6 +112,7 @@ export class BeachExperience extends EventTarget {
     this.billiardsEventHandlers = null;
     this.discoveryEventHandlers = null;
     this.commissionEventHandlers = null;
+    this.communityEventHandlers = null;
     this.commissionRainAccumulator = 0;
     this.commissionStartDay = 0;
 
@@ -285,6 +287,14 @@ export class BeachExperience extends EventTarget {
     this.commissionStartDay = this.commissions.day - this.environment.dayClock.getState().days;
     this.bindCommissionEvents();
 
+    this.community = new CoastalCommunity({
+      storage: commissionStorage,
+      npcIds: NPC_SPECS.map(spec => spec.id),
+      fulfillOrder: order => this.discovery.fulfillOrder(order),
+    });
+    this.communityStartDay = this.community.day - this.environment.dayClock.getState().days;
+    this.bindCommunityEvents();
+
     this.npcs = new BeachNpcSystem(this);
     this.npcs.addEventListener('dialogchange', () => this.dispatchEvent(new Event('npcdialogchange')));
 
@@ -454,9 +464,23 @@ export class BeachExperience extends EventTarget {
     this.commissions.addEventListener('reward', this.commissionEventHandlers.reward);
   }
 
+  bindCommunityEvents() {
+    this.communityEventHandlers = {
+      change: (event) => this.dispatchEvent(new CustomEvent('communitychange', {
+        detail: event.detail,
+      })),
+      fulfilled: (event) => this.dispatchEvent(new CustomEvent('communityorderfulfilled', {
+        detail: event.detail,
+      })),
+    };
+    this.community.addEventListener('change', this.communityEventHandlers.change);
+    this.community.addEventListener('fulfilled', this.communityEventHandlers.fulfilled);
+  }
+
   updateCommissions(delta, dayClock) {
     if (!this.commissions) return;
     this.commissions.syncDay(this.commissionStartDay + dayClock.days);
+    this.community?.syncDay(this.communityStartDay + dayClock.days);
     if (this.environment.getTideState().band === 'low') {
       this.commissions.record('low-tide');
     }
@@ -473,6 +497,11 @@ export class BeachExperience extends EventTarget {
 
   claimCommission(id) {
     return this.commissions?.claim(id) ?? null;
+  }
+
+  fulfillCommunityOrder(id) {
+    const inventory = this.discovery?.campaign.getState().economy.inventory ?? {};
+    return this.community?.fulfill(id, inventory) ?? null;
   }
 
   startPreview() {
@@ -1447,6 +1476,10 @@ export class BeachExperience extends EventTarget {
       this.commissions?.removeEventListener('change', this.commissionEventHandlers.change);
       this.commissions?.removeEventListener('reward', this.commissionEventHandlers.reward);
     }
+    if (this.communityEventHandlers) {
+      this.community?.removeEventListener('change', this.communityEventHandlers.change);
+      this.community?.removeEventListener('fulfilled', this.communityEventHandlers.fulfilled);
+    }
     this.world?.unregisterCameraCollider(this.billiards?.cameraCollider);
     this.discovery?.dispose();
     this.billiards?.dispose();
@@ -1506,6 +1539,9 @@ export class BeachExperience extends EventTarget {
       billiards: this.billiards?.getDebugState() ?? null,
       discovery: this.discovery?.getDebugState() ?? null,
       commissions: this.commissions?.getState() ?? null,
+      community: this.community?.getState(
+        this.discovery?.campaign.getState().economy.inventory ?? {},
+      ) ?? null,
       rain: this.rain?.getDebugState() ?? {
         enabled: this.rainEnabled,
         visible: false,

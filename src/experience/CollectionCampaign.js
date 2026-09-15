@@ -94,6 +94,16 @@ export class CollectionCampaign {
     this.coins = Math.min(9999, this.coins + granted); this.persist();
     return { source, granted: this.coins - before, coins: this.coins };
   }
+  deliver(kind, count, reward, source = 'community-order') {
+    const quantity = Math.max(0, Math.floor(Number(count) || 0));
+    const earned = Math.max(0, Math.floor(Number(reward) || 0));
+    if (!COLLECTION_KINDS.includes(kind) || !quantity || !earned || this.inventory[kind] < quantity) return null;
+    this.inventory[kind] -= quantity;
+    const before = this.coins;
+    this.coins = Math.min(9999, this.coins + earned); this.persist();
+    return { source, delivered: { [kind]: quantity }, count: quantity,
+      earned: this.coins - before, coins: this.coins };
+  }
   reset() {
     this.chapter = 0; this.found.clear(); this.rewardClaimed = false;
     this.inventory = Object.fromEntries(COLLECTION_KINDS.map(kind => [kind, 0]));

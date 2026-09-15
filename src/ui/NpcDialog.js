@@ -67,7 +67,10 @@ export class NpcDialog {
     if (!this.dialog.open || revision !== this.rosterRevision || this.signal.aborted) return;
     const items = this.experience.npcs?.items ?? [];
     this.text.textContent = items.length ? '今天想和谁聊聊？' : '游客暂时未能到达。请刷新后再试。';
-    this.buttons(items.map(i => ({ id: i.spec.id, text: `${i.spec.name} · ${i.spec.role}` })), id => {
+    this.buttons(items.map(i => {
+      const relationship = this.experience.community?.getRelationship(i.spec.id);
+      return { id: i.spec.id, text: `${i.spec.name} · ${i.spec.role} · ${relationship?.label ?? '初次相遇'}` };
+    }), id => {
       const npc = items.find(i => i.spec.id === id);
       const target = npc.root.position.clone().add({ x: 0, y: 1, z: 0 });
       this.experience.startCameraTween(target.clone().add({ x: 3.8, y: 2, z: 6.8 }), target);

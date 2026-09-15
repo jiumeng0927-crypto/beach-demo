@@ -52,6 +52,11 @@ try {
       npc.root.rotation.y = .1; e.renderScene(.016);
     });
     await page.screenshot({ path: `screenshots/living-coast-041-${label}-chen.png` });
+    await page.evaluate(() => window.__TIDELINE__.experience.npcs.open('lin'));
+    await page.waitForFunction(() => document.querySelector('#npc-dialog')?.open);
+    assert.match(await page.locator('#npc-role').textContent(), /见过几面/);
+    await page.click('#npc-close');
+    assert.equal(await page.evaluate(() => window.__TIDELINE__.experience.community.getState().reputation), 1);
     await page.evaluate(() => {
       const e = window.__TIDELINE__.experience;
       const trunk = e.scene.getObjectByName('InstancedPalmTrunks');
@@ -109,11 +114,22 @@ try {
     await page.screenshot({ path: `screenshots/living-coast-047-${label}-commissions.png` });
     await page.click('#collection-close');
     await page.evaluate(() => { const d = window.__TIDELINE__.experience.discovery; d.items.forEach((_, i) => d.collect(i)); });
+    assert.deepEqual(await page.evaluate(() => {
+      const economy = window.__TIDELINE__.experience.discovery.campaign.getState().economy;
+      return { coins: economy.coins, glass: economy.inventory.glass };
+    }), { coins: 0, glass: 6 });
+    await page.evaluate(() => window.__TIDELINE__.experience.npcs.open('lin'));
+    await page.waitForFunction(() => document.querySelector('[data-npc-action="delivery"]'));
+    await page.click('[data-npc-action="delivery"]');
+    assert.match(await page.locator('#npc-text').textContent(), /已经交付/);
+    await page.click('#npc-close');
     await page.click('#collection-open'); await page.click('#collection-tab-market');
-    assert.equal(await page.locator('#market-coins').textContent(), '0');
-    assert.match(await page.locator('#market-inventory').textContent(), /海玻璃 × 6/);
-    await page.click('#market-sell-all'); assert.equal(await page.locator('#market-coins').textContent(), '48');
-    await page.click('[data-market-product="tide-map"]'); assert.equal(await page.locator('#market-coins').textContent(), '32');
+    assert.equal(await page.locator('#market-coins').textContent(), '20');
+    assert.match(await page.locator('#market-inventory').textContent(), /海玻璃 × 4/);
+    assert.equal(await page.locator('#market-orders li').count(), 3);
+    assert.equal(await page.locator('[data-community-order="lin-glass"]').textContent(), '已交付');
+    await page.click('#market-sell-all'); assert.equal(await page.locator('#market-coins').textContent(), '52');
+    await page.click('[data-market-product="tide-map"]'); assert.equal(await page.locator('#market-coins').textContent(), '36');
     assert.equal(await page.locator('[data-market-product="tide-map"]').textContent(), '已拥有');
     await page.screenshot({ path: `screenshots/living-coast-041-${label}-market.png` });
     await page.click('#collection-tab-journal'); await page.click('#collection-next');
@@ -150,8 +166,13 @@ try {
       const state = window.__TIDELINE__.experience.discovery.campaign.getState();
       return { collected: state.overallCollected, coins: state.economy.coins,
         shell: state.economy.inventory.shell, purchases: state.economy.purchases };
-    }), { collected: 7, coins: 32, shell: 1, purchases: ['tide-map'] });
+    }), { collected: 7, coins: 36, shell: 1, purchases: ['tide-map'] });
     assert.equal(await page.evaluate(() => window.__TIDELINE__.experience.commissions.getState().completed), 3);
+    assert.deepEqual(await page.evaluate(() => {
+      const state = window.__TIDELINE__.experience.community.getState();
+      return { reputation: state.reputation, completed: state.completed,
+        lin: state.relationships.lin.affinity };
+    }), { reputation: 3, completed: 1, lin: 3 });
     await page.evaluate(() => window.__TIDELINE__.experience.setTideMode('low'));
     await page.waitForFunction(() => window.__TIDELINE__.experience.discovery.tideLevel <= -.22);
     await page.evaluate(() => { const d = window.__TIDELINE__.experience.discovery; d.items.forEach((_, i) => d.collect(i)); });
@@ -167,7 +188,7 @@ try {
     assert.deepEqual(await page.evaluate(() => ({
       coins: window.__TIDELINE__.experience.discovery.campaign.getState().economy.coins,
       claimed: window.__TIDELINE__.experience.commissions.getState().claimed,
-    })), { coins: 42, claimed: 1 });
+    })), { coins: 46, claimed: 1 });
     await page.keyboard.press('Escape');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []);
@@ -181,7 +202,8 @@ try {
     });
     assert.deepEqual(disposed, [1, 1, 1, 1, 1, 1, 1]);
     results.push({ label, render: initial.render, cloudDelta, completed: end.completed,
-      commissionCompleted: 3, commissionClaimed: 1, savedReload: true, disposed });
+      commissionCompleted: 3, commissionClaimed: 1, communityReputation: 3,
+      communityOrders: 1, savedReload: true, disposed });
     await context.close();
   }
   console.log(JSON.stringify({ ok: true, results }, null, 2));
