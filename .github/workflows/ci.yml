@@ -21,6 +21,8 @@ jobs:
       - run: npm run test:water-layout
       - run: npm run test:water-quality
       - run: npm run test:swash
+      - run: npm run test:boundary
+      - run: npm run test:street
       - run: npm run test:living-coast
       - run: npm run test:billiards-presentation
       - run: npm run test:billiards-input

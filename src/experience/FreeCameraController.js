@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { STREET_WALK_MAX_Z } from './CoastalStreet.js';
 
 const MOVEMENT_CODES = new Set([
   'KeyW',
@@ -34,7 +35,7 @@ export class FreeCameraController extends EventTarget {
     {
       bounds = new THREE.Box3(
         new THREE.Vector3(-45, 1.2, -36),
-        new THREE.Vector3(45, 20, 56),
+        new THREE.Vector3(45, 20, STREET_WALK_MAX_Z),
       ),
       moveSpeed = 7.5,
       boostMultiplier = 2.2,

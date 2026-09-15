@@ -15,6 +15,8 @@ export const COASTAL_PLACEMENTS = {
   wooden_crate_02: [
     { x: 37, z: 28.5, span: 1.5, yaw: 0.2, solid: true },
     { x: 38.8, z: 28.8, span: 1.2, yaw: -0.15, solid: true },
+    { x: 20.5, z: 72.6, span: 1.2, yaw: 0.08, solid: true, surface: 'street' },
+    { x: 18.9, z: 72.4, span: 1.0, yaw: -0.14, solid: true, surface: 'street' },
   ],
   plastic_crate_01: [
     { x: 40.5, z: 28.2, span: 1.3, yaw: 0.28, solid: true },
@@ -35,6 +37,15 @@ export const COASTAL_PLACEMENTS = {
     { x: -33, z: 14, span: 4, yaw: 0.8, embed: 0.32, solid: true },
     { x: 29.5, z: 14, span: 3.6, yaw: -0.5, embed: 0.3, solid: true },
     { x: -30, z: 17, span: 1.8, yaw: 2.4, embed: 0.16, solid: true },
+  ],
+  outdoor_table_chair_set_01: [
+    { x: -26, z: 73.1, span: 2.7, yaw: 0, solid: true, surface: 'street' },
+    { x: -29.3, z: 73.1, span: 2.7, yaw: 0.15, solid: true, surface: 'street' },
+    { x: 17, z: 44, span: 2.7, yaw: -0.18, solid: true },
+  ],
+  planter_box_01: [
+    { x: -33.6, z: 77, span: 1.6, yaw: 0.1, solid: true, surface: 'street' },
+    { x: 24.6, z: 77, span: 1.6, yaw: -0.1, solid: true, surface: 'street' },
   ],
 };
 
@@ -183,7 +194,8 @@ export class CoastalProps {
     try {
       await Promise.all(Object.entries(COASTAL_PLACEMENTS).map(async ([id, specs]) => {
         try {
-          const response = await fetch(assetUrl(`models/coastal/${id}.glb`), { signal: this.controller.signal });
+          const directory = specs[0]?.surface === 'street' ? 'street' : 'coastal';
+          const response = await fetch(assetUrl(`models/${directory}/${id}.glb`), { signal: this.controller.signal });
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const gltf = await loader.parseAsync(await response.arrayBuffer(), '');
           if (this.disposed) { release(resourcesOf(gltf.scene)); return; }
@@ -224,7 +236,7 @@ export class CoastalProps {
         vertices.push(point.x, point.y, point.z);
       }
     });
-    const transforms = specs.map((spec) => {
+    const transforms = specs.map((spec, index) => {
       const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(spec.pitch ?? 0, spec.yaw, 0));
       const matrix = new THREE.Matrix4().compose(new THREE.Vector3(), rotation, new THREE.Vector3().setScalar(spec.span));
       const bounds = normalizedBounds.clone().applyMatrix4(matrix);
@@ -233,14 +245,18 @@ export class CoastalProps {
       let minY = Infinity;
       for (let i = 0; i < vertices.length; i += 3) minY = Math.min(minY, point.fromArray(vertices, i).applyMatrix4(matrix).y);
       bounds.min.y = minY;
-      const ground = terrainHeight(spec.x, spec.z) - (spec.embed ?? 0);
+      const ground = (spec.surface === 'street' ? this.world.getWalkSurfaceHeight(spec.x, spec.z)
+        : terrainHeight(spec.x, spec.z)) - (spec.embed ?? 0);
       matrix.setPosition(spec.x, ground - bounds.min.y, spec.z);
       bounds.translate(new THREE.Vector3(spec.x, ground - bounds.min.y, spec.z));
-      this.vegetationBounds.push(bounds.clone());
-      if (spec.solid) this.addCollider({ type: 'box', name: `coastal-${id}`, x: spec.x, z: spec.z,
+      const clearance = bounds.clone();
+      this.vegetationBounds.push(clearance);
+      const collider = spec.solid ? { type: 'box', name: `coastal-${id}`, x: spec.x, z: spec.z,
         halfX: (bounds.max.x - bounds.min.x) / 2, halfZ: (bounds.max.z - bounds.min.z) / 2,
-        rotation: 0, minY: ground - 0.1, maxY: bounds.max.y });
-      this.placements.push({ id, x: spec.x, z: spec.z, minY: bounds.min.y, ground });
+        rotation: 0, minY: ground - 0.1, maxY: bounds.max.y } : null;
+      if (collider) this.addCollider(collider);
+      this.placements.push({ id, index, x: spec.x, z: spec.z, minY: bounds.min.y, ground,
+        surface: spec.surface, embed: spec.embed ?? 0, clearance, collider });
       return matrix;
     });
     source.traverse((mesh) => {
@@ -311,9 +327,31 @@ export class CoastalProps {
     world.registerReflectionExclusion(this.root);
     this.colliders.forEach((c) => world.registerCameraCollider(c));
     this.replaceShoreRocks();
+    this.reanchorStreetAssets();
     this.updateTide(world.getTideState().waterHeight);
     world.details.clearVegetation(this.vegetationBounds);
     if (this.loaded.includes('lifebuoy')) world.root.getObjectByName('LegacyStandaloneLifeRing').visible = false;
+  }
+
+  reanchorStreetAssets() {
+    const matrix = new THREE.Matrix4(), changed = new Set();
+    for (const placement of this.placements) {
+      if (placement.surface !== 'street') continue;
+      const ground = this.world.getWalkSurfaceHeight(placement.x, placement.z) - placement.embed;
+      const delta = ground - placement.ground;
+      if (Math.abs(delta) < 1e-10) continue;
+      placement.ground = ground; placement.minY += delta;
+      placement.clearance.min.y += delta; placement.clearance.max.y += delta;
+      if (placement.collider) { placement.collider.minY += delta; placement.collider.maxY += delta; }
+      this.root.traverse(mesh => {
+        if (!mesh.isInstancedMesh || mesh.name !== `Coastal_${placement.id}`) return;
+        mesh.getMatrixAt(placement.index, matrix); matrix.elements[13] += delta;
+        mesh.setMatrixAt(placement.index, matrix); changed.add(mesh);
+      });
+    }
+    for (const mesh of changed) {
+      mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingBox(); mesh.computeBoundingSphere();
+    }
   }
 
   createBeachEquipment() {
@@ -383,6 +421,7 @@ export class CoastalProps {
         towels.push(colored(geometry, stripe % 2 ? palette.chalk : tint));
       }
     }
+    this.createBeachFurniture(frames);
     for (const [name, parts, roughness, side] of [
       ['BeachUmbrellaCanopies', canopy, 0.92, THREE.DoubleSide],
       ['BeachEquipmentFrames', frames, 0.66, THREE.FrontSide],
@@ -397,6 +436,54 @@ export class CoastalProps {
       mesh.receiveShadow = true;
       this.root.add(mesh);
     }
+  }
+
+  createBeachFurniture(frames) {
+    const box = (size, position, color = palette.timber, rotation = [0, 0, 0]) => {
+      const matrix = new THREE.Matrix4().compose(new THREE.Vector3(...position),
+        new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)), new THREE.Vector3(1, 1, 1));
+      frames.push(colored(new THREE.BoxGeometry(...size).applyMatrix4(matrix), color));
+    };
+    const clear = (x, z, halfX, halfZ, height) => {
+      const y = terrainHeight(x, z);
+      this.vegetationBounds.push(new THREE.Box3(new THREE.Vector3(x - halfX, y - 0.2, z - halfZ),
+        new THREE.Vector3(x + halfX, y + height, z + halfZ)));
+    };
+    for (const [x, z, tint] of [[10.3, 42, palette.coral], [13.3, 42, palette.sage], [22.4, 33.9, palette.seaGlass], [25.5, 34.2, palette.ochre]]) {
+      const y = terrainHeight(x, z);
+      for (const dx of [-0.52, 0.52]) {
+        box([0.09, 0.13, 2.6], [x + dx, y + 0.43, z]);
+        for (const dz of [-0.9, 0.8]) box([0.1, 0.42, 0.12], [x + dx, y + 0.21, z + dz]);
+        box([0.09, 0.12, 1.15], [x + dx, y + 0.81, z + 0.99], palette.timber, [-0.55, 0, 0]);
+      }
+      for (let i = 0; i < 8; i++) box([1.16, 0.055, 0.18], [x, y + 0.51, z - 1.15 + i * 0.21], i % 3 ? palette.chalk : tint);
+      for (let i = 0; i < 6; i++) box([1.16, 0.055, 0.15], [x, y + 0.57 + i * 0.095, z + 0.59 + i * 0.15], i % 3 ? palette.chalk : tint, [-0.55, 0, 0]);
+      clear(x, z, 0.7, 1.7, 1.4);
+      this.addCollider({ type: 'box', name: 'beach-lounger', x, z: z + 0.15, halfX: 0.62, halfZ: 1.55, rotation: 0, minY: y, maxY: y + 1.2 });
+    }
+    // An elevated rescue lookout makes the boardwalk end a readable landmark.
+    const x = 31, z = 43, y = terrainHeight(x, z);
+    for (const dx of [-1.1, 1.1]) for (const dz of [-0.85, 0.85]) {
+      box([0.15, 4.15, 0.15], [x + dx, y + 2.075, z + dz], palette.chalk);
+      box([0.12, 1.95, 0.12], [x + dx, y + 0.9, z + dz * 0.25], palette.coral, [dz > 0 ? -0.7 : 0.7, 0, 0]);
+    }
+    box([2.65, 0.18, 2.1], [x, y + 2, z]);
+    box([2.8, 0.13, 2.4], [x, y + 4.2, z], palette.coral, [-0.08, 0, 0]);
+    for (const dx of [-1.1, 1.1]) box([0.1, 0.1, 1.9], [x + dx, y + 2.85, z], palette.chalk);
+    box([2.3, 0.1, 0.12], [x, y + 2.85, z + 0.85], palette.chalk);
+    box([1.0, 0.12, 0.6], [x, y + 2.48, z + 0.28]);
+    box([1.0, 0.65, 0.12], [x, y + 2.8, z + 0.57], palette.chalk);
+    for (const dx of [-0.4, 0.4]) box([0.1, 2.4, 0.12], [x + dx, y + 1.1, z + 1.4], palette.chalk, [-0.32, 0, 0]);
+    for (let i = 0; i < 7; i++) box([0.86, 0.08, 0.12], [x, y + 0.18 + i * 0.28, z + 1.74 - i * 0.092]);
+    box([2.3, 0.1, 0.12], [x, y + 2.95, z - 0.85], palette.chalk);
+    for (let i = 0; i < 4; i++) {
+      const ring = new THREE.TorusGeometry(0.34, 0.075, 5, 5, Math.PI / 2);
+      ring.rotateZ(i * Math.PI / 2).translate(x, y + 2.66, z - 0.97);
+      frames.push(colored(ring, i % 2 ? palette.chalk : palette.coral));
+    }
+    clear(x, z, 1.7, 2.1, 4.5);
+    this.addCollider({ type: 'box', name: 'rescue-lookout', x, z: z + 0.25, halfX: 1.3, halfZ: 1.65, rotation: 0, minY: y, maxY: y + 4.3 });
+    this.equipmentCounts = { umbrellas: 3, loungers: 4, rescueLookouts: 1 };
   }
 
   setShadows(enabled) {
@@ -417,6 +504,7 @@ export class CoastalProps {
       triangles += (m.geometry.index?.count ?? m.geometry.attributes.position.count) / 3 * (m.isInstancedMesh ? m.count : 1);
     } });
     return { loaded: [...this.loaded].sort(), errors: [...this.errors], instances: this.placements.length,
+      equipment: this.equipmentCounts,
       waterHeight: this.waterHeight.value, vegetationMoved: this.world?.details.grass.userData.clearanceMoved ?? 0,
       batches, triangles, replacedShoreRocks: this.shoreBatch?.count ?? 0, shoreShaderCompiled: Boolean(this.shoreShaderCompiled),
       shoreTriangles: this.shoreBatch ? (this.shoreBatch.geometry.index?.count ?? this.shoreBatch.geometry.attributes.position.count) / 3 * this.shoreBatch.count : 0,

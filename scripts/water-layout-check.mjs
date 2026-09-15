@@ -47,7 +47,7 @@ try {
     assert.equal(layout.rack.x, 38); assert.equal(layout.rack.z, 24);
     assert.ok(Math.abs(layout.center[0] - layout.rack.x) < 0.5 && Math.abs(layout.center[2] - layout.rack.z) < 0.7);
     assert.ok(layout.collision.includes('surfboard-rack'));
-    assert.equal(layout.table[0], 0); assert.equal(layout.table[2], 31.2); assert.equal(layout.npc, 2); assert.equal(layout.overflow, false);
+    assert.equal(layout.table[0], 0); assert.equal(layout.table[2], 31.2); assert.equal(layout.npc, 10); assert.equal(layout.overflow, false);
     assert.equal(layout.framed, true, 'The complete boat and table must fit in the entry camera');
     if (mobile) {
       assert.equal(await page.locator('#billiards-details').isVisible(), false);

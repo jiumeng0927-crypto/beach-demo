@@ -215,7 +215,7 @@ export function createSandMaterial({ quality = 'high' } = {}) {
   };
 
   material.customProgramCacheKey = () =>
-    `tideline-sand-v6-${usePhysicalLayer ? 'physical' : 'standard'}`;
+    `tideline-sand-v7-${usePhysicalLayer ? 'physical' : 'standard'}`;
   material.userData.uniforms = uniforms;
   return material;
 }

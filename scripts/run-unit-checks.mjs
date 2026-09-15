@@ -9,6 +9,9 @@ const checks = [
   'celestial-resource', 'discovery-resource', 'beach-billiards', 'character-system',
   'living-coast-unit',
   'billiards-presentation-unit',
+  'boundary-unit',
+  'source-entry',
+  'street-unit',
 ];
 for (const check of checks) {
   const result = spawnSync(process.execPath, [`scripts/${check}-check.mjs`], {

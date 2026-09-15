@@ -7,7 +7,7 @@ import { PNG } from 'pngjs';
 import { browserOptions } from './browser-options.mjs';
 import { verifiedPublicFiles } from './public-assets.mjs';
 
-const root = resolve(import.meta.dirname, '..', 'dist');
+const root = resolve(import.meta.dirname, '..', process.env.TIDELINE_WEB_ROOT || 'dist');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.json': 'application/json' };
 const publicFiles = verifiedPublicFiles();
@@ -67,12 +67,19 @@ try {
         e.renderScene(0);
         window.__SKY_DISPOSALS__ = () => disposals;
         return { loaded: e.npcs.getState().loaded, sky: sky ? [sky.image.width, sky.image.height] : null,
+          boundary: Boolean(e.world.coastContinuation), shops: e.world.street.shopFloors.length,
+          equipment: e.coastalProps.equipmentCounts,
+          reconstructedDepth: Boolean(e.environment.water.material.uniforms.uRefractionTexelSize),
           reused: sky === e.environment.skyTexture, disposals,
           blend: e.environment.sky.material.uniforms.uSkyBlend.value,
           evolvingClouds: Number.isFinite(e.environment.clouds.material.uniforms.uEvolution.value),
           environmentBlend: e.environment.environmentSky.material.uniforms.uSkyBlend.value };
       });
-      assert.equal(state.loaded, 2);
+      assert.equal(state.loaded, 10);
+      assert.equal(state.shops, 3);
+      assert.equal(state.equipment.loungers, 4);
+      assert.equal(state.boundary, true, 'Published entry must load the current boundary implementation');
+      assert.equal(state.reconstructedDepth, true, 'Published water must use continuous depth reconstruction');
       assert.deepEqual(state.sky, fallback ? null : [2048, 1024]);
       assert.equal(state.reused, true); assert.equal(state.disposals, 0);
       assert.equal(state.blend, 0, 'Visible clouds must come from the live layer, not baked HDR clouds');

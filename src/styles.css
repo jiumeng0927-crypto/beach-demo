@@ -776,6 +776,9 @@ kbd {
 .collection-dialog h2 { font-size: 23px; margin: 0; }
 .collection-dialog p { font-size: 13px; line-height: 1.6; }
 .collection-dialog .icon-button { color: #283b35; background: #e1e9e1; }
+.collection-tabs { display: grid; grid-template-columns: 1fr 1fr; margin-top: 14px; border-bottom: 1px solid #b8c9bf; }
+.collection-tabs button { min-height: 38px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #66776f; font: inherit; cursor: pointer; }
+.collection-tabs button[aria-selected="true"] { border-bottom-color: #447663; color: #274d41; font-weight: 600; }
 .collection-select { display: grid; gap: 8px; font-size: 12px; margin-top: 15px; }
 .collection-select select { width: 100%; font: inherit; font-size: 14px; padding: 10px; border: 1px solid #b8c9bf; border-radius: 4px; color: inherit; background: #fff; }
 #collection-items { list-style: none; padding: 0; margin: 10px 0; }
@@ -786,6 +789,16 @@ kbd {
 #collection-badges { color: #567565; }
 .collection-dialog footer { display: flex; gap: 10px; }
 .collection-dialog footer button { flex: 1; }
+.market-balance { display: flex; align-items: baseline; justify-content: space-between; margin-top: 18px; padding-bottom: 10px; border-bottom: 1px solid #d7e1d6; }
+.market-balance span { color: #67776e; font-size: 12px; }
+.market-balance output { font-size: 25px; font-variant-numeric: tabular-nums; color: #305f50; }
+.collection-dialog h3 { margin: 20px 0 6px; font-size: 14px; }
+.market-list { list-style: none; padding: 0; margin: 8px 0 14px; }
+.market-list li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; min-height: 48px; padding: 8px 0; border-bottom: 1px solid #d7e1d6; }
+.market-list strong { font-size: 14px; font-weight: 600; }
+.market-list span { color: #67776e; font-size: 12px; }
+.market-list button { grid-column: 2; grid-row: 1 / span 2; min-width: 82px; min-height: 34px; border: 1px solid #7d9d94; border-radius: 4px; background: #e2ebe5; color: #25453b; font: inherit; cursor: pointer; }
+.market-list button:disabled { opacity: .55; cursor: default; }
 @media (max-width: 720px) {
   .time-control { gap: 4px; }
   .clock-status { padding: 0 2px; }

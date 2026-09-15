@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { addCoastalSurfaceDetail, COASTAL_PALETTE as palette } from './CoastalStyle.js';
 import { BEACH_WALK_ROUTE, distanceToBeachWalk } from './CoastalLayout.js';
 import { createCoastalGulls } from './CoastalGulls.js';
+import { createCoastContinuation } from './CoastBoundary.js';
+import { createCoastalStreet } from './CoastalStreet.js';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import {
   mergeGeometries,
@@ -211,8 +213,7 @@ function buildBeachGeometry(quality) {
   // for interactive props and vegetation.
   const segmentsX = quality === 'high' ? 220 : 150;
   const segmentsZ = quality === 'high' ? 105 : 72;
-  // Extra width keeps the authored terrain edge outside every allowed camera
-  // angle; matching segment density preserves the existing height-field scale.
+  // Keep the authored grid unchanged; the outer continuation owns the horizon.
   const geometry = new THREE.PlaneGeometry(260, 120, segmentsX, segmentsZ);
   const positions = geometry.attributes.position;
 
@@ -1491,12 +1492,12 @@ function createDistantSailboat(parent, materials) {
   return sailboat;
 }
 
-function createInstancedGroundDetails(parent, random, materials, quality, boardwalk) {
+function createInstancedGroundDetails(parent, random, materials, quality, boardwalk, street) {
   // Pebbles, shells and grass repeat simple silhouettes, making them ideal for
   // InstancedMesh: one material/geometry draw per category.
-  const pebbleCount = quality === 'high' ? 120 : 58;
-  const shellCount = quality === 'high' ? 46 : 22;
-  const grassCount = quality === 'high' ? 460 : 200;
+  const pebbleCount = quality === 'high' ? 76 : 36;
+  const shellCount = quality === 'high' ? 30 : 16;
+  const grassCount = quality === 'high' ? 300 : 70;
   const matrix = new THREE.Matrix4();
   const quaternion = new THREE.Quaternion();
   const scale = new THREE.Vector3();
@@ -1612,6 +1613,7 @@ function createInstancedGroundDetails(parent, random, materials, quality, boardw
       let x = originX, z = originZ;
       for (let attempt = 0; attempt < 64; attempt++) {
         [x, z] = boardwalk.clearVegetation(x, z, radius + 0.2);
+        [x, z] = street.clearVegetation(x, z, radius + 0.2);
         const obstructed = occupiedBounds.some(b => x + radius >= b.min.x && x - radius <= b.max.x
           && z + radius >= b.min.z && z - radius <= b.max.z);
         if (!obstructed && distanceToBeachWalk(x, z) > radius + 1.2) break;
@@ -1631,7 +1633,7 @@ function createInstancedGroundDetails(parent, random, materials, quality, boardw
 }
 
 function createPalmTrunkGeometry(quality) {
-  const geometry = new THREE.CylinderGeometry(.967, 1, 1, quality === 'low' ? 10 : 12, quality === 'low' ? 4 : 8);
+  const geometry = new THREE.CylinderGeometry(.967, 1, 1, quality === 'low' ? 10 : 12, quality === 'low' ? 2 : 8);
   const p = geometry.attributes.position;
   for (let i = 0; i < p.count; i++) {
     const ring = 1 + .035 * Math.cos((p.getY(i) + .5) * Math.PI * 8);
@@ -1959,6 +1961,11 @@ export function createBeachWorld(parent, { quality = 'high' } = {}) {
   seabed.receiveShadow = true;
   root.add(seabed);
 
+  const coastContinuation = new THREE.Mesh(createCoastContinuation(beach, seabed, terrainHeight), sandMaterial);
+  coastContinuation.name = 'CoastContinuation';
+  coastContinuation.receiveShadow = true;
+  root.add(coastContinuation);
+
   const foam = new THREE.Mesh(
     buildFoamGeometry(beach.geometry),
     foamMaterial,
@@ -2045,7 +2052,7 @@ export function createBeachWorld(parent, { quality = 'high' } = {}) {
   );
   const palmCoconuts = createStaticInstanceBatch(
     root,
-    new THREE.SphereGeometry(1, 10, 8),
+    new THREE.SphereGeometry(1, quality === 'low' ? 8 : 10, quality === 'low' ? 6 : 8),
     materials.coconut,
     coconutInstances,
     'InstancedPalmCoconuts',
@@ -2069,7 +2076,9 @@ export function createBeachWorld(parent, { quality = 'high' } = {}) {
   );
   const tidePools = createTidePools(root, quality);
   const sailboat = createDistantSailboat(root, materials);
-  const details = createInstancedGroundDetails(root, random, materials, quality, boardwalk);
+  const street = createCoastalStreet(root, terrainHeight, quality);
+  cameraColliders.push(...street.colliders);
+  const details = createInstancedGroundDetails(root, random, materials, quality, boardwalk, street);
   const footprints = createFootprintTrail(root, quality);
   const birds = createCoastalGulls(root, quality);
 
@@ -2177,6 +2186,8 @@ export function createBeachWorld(parent, { quality = 'high' } = {}) {
   const reflectionExclusions = [
     beach,
     seabed,
+    coastContinuation,
+    street.root,
     foam,
     details.pebbles,
     details.shells,
@@ -2221,6 +2232,8 @@ export function createBeachWorld(parent, { quality = 'high' } = {}) {
     beach,
     foam,
     seabed,
+    coastContinuation,
+    street,
     sandMaterial,
     foamMaterial,
     lantern,
@@ -2259,7 +2272,7 @@ export function createBeachWorld(parent, { quality = 'high' } = {}) {
     },
 
     getWalkSurfaceHeight(x, z) {
-      return boardwalk.surfaceHeightAt(x, z) ?? terrainHeight(x, z);
+      return boardwalk.surfaceHeightAt(x, z) ?? street.surfaceHeightAt(x, z) ?? terrainHeight(x, z);
     },
 
     getWalkSurfaceType(x, z) {
@@ -2302,6 +2315,7 @@ export function createBeachWorld(parent, { quality = 'high' } = {}) {
 
       const windPhase = wind?.phase ?? elapsed;
       const windFactor = wind?.factor ?? 1;
+      street.update(atmosphere.night, windPhase, windFactor);
       palmFronds.update(windPhase, windFactor);
       materials.grass.userData.uniforms.uGrassTime.value = windPhase;
       materials.grass.userData.uniforms.uWindStrength.value =

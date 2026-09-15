@@ -208,11 +208,12 @@
       }
     ],
     "sourceTriangles": 10728,
-    "triangles": 3500,
+    "triangles": 1399,
     "textureLimit": 512,
-    "bytes": 269152,
-    "sha256": "cb6a7c93bceda39683237cda8fbc67ce8d70b49f233007dc841f9505eb5b2449",
-    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+    "bytes": 219216,
+    "sha256": "fa931e0505cbb4cec00d6eb27c5c399a20dd360b0b31d6cdae579a90b9cc9ba4",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0; 0.45 small-prop weld/decimation; retain PBR textures",
+    "previousWebSha256": "cb6a7c93bceda39683237cda8fbc67ce8d70b49f233007dc841f9505eb5b2449"
   },
   {
     "id": "lambis_shell",
@@ -257,11 +258,12 @@
       }
     ],
     "sourceTriangles": 12498,
-    "triangles": 2200,
+    "triangles": 799,
     "textureLimit": 512,
-    "bytes": 249472,
-    "sha256": "9f4891395a9ac464b793eb5175e55b0b3ae5b78d36fe5aefb857f1e410f1b4e2",
-    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+    "bytes": 211600,
+    "sha256": "5eda169d0752bfe2322880f1ebe1fdd4c4c32fdf5fb93973243f3c3201af72b6",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0; 0.45 small-prop weld/decimation; retain PBR textures",
+    "previousWebSha256": "9f4891395a9ac464b793eb5175e55b0b3ae5b78d36fe5aefb857f1e410f1b4e2"
   },
   {
     "id": "boulder_01",

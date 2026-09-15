@@ -24,5 +24,37 @@
     "sourceSha256": "ca9c264a4549eb664c6945db053ea2db1d0809a98ffc55cc2800e5dd09ecf55f",
     "sha256": "af9ebc1130ec7c28ba9e5228ffa1aa37fd2ae8d91873f9a65b58e94afa075643",
     "modifications": "One-level subdivision, 40% decimation and smooth normals; coastal cap, sunglasses and canvas shoes; single vertex-color material; original Idle, Walk and Victory rig retained. Added geometry released under MIT."
+  },
+  {
+    "file": "casual-female-crowd.glb",
+    "author": "Quaternius",
+    "pack": "Ultimate Animated Character Pack",
+    "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+    "license": "CC0-1.0",
+    "modificationsLicense": "MIT",
+    "meshTriangles": 1473,
+    "sourceFile": "Casual_Female.blend",
+    "sourceSha256": "df3dae4a16a7e331c0b7662f768cb4eabe8fb0863e9ab09cbfdf3031cf8d8955",
+    "sha256": "d6ce4eaf0012f86a58f4a72c05c032553bad4129c96384aff4eb6e736e287272",
+    "modifications": "Lightweight street crowd derivative of the authored coastal visitor. Welded and decimated in Blender; original rig, vertex colors and Idle/Walk/Victory retained.",
+    "sourceAsset": "casual-female.glb",
+    "sourceAssetSha256": "eac45990c96f300ea97e2eaeb4def556040517b3216af735a03cf218e9df4fad",
+    "bytes": 152712
+  },
+  {
+    "file": "casual-male-crowd.glb",
+    "author": "Quaternius",
+    "pack": "Ultimate Animated Character Pack",
+    "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+    "license": "CC0-1.0",
+    "modificationsLicense": "MIT",
+    "meshTriangles": 1473,
+    "sourceFile": "Casual_Male.blend",
+    "sourceSha256": "ca9c264a4549eb664c6945db053ea2db1d0809a98ffc55cc2800e5dd09ecf55f",
+    "sha256": "231058b9f8d836f4b0683da4c2d674ac7c60f25264f4c08694c9fadfb27e8d00",
+    "modifications": "Lightweight street crowd derivative of the authored coastal visitor. Welded and decimated in Blender; original rig, vertex colors and Idle/Walk/Victory retained.",
+    "sourceAsset": "casual-male.glb",
+    "sourceAssetSha256": "af9ebc1130ec7c28ba9e5228ffa1aa37fd2ae8d91873f9a65b58e94afa075643",
+    "bytes": 153756
   }
 ]

@@ -71,6 +71,19 @@ function createCoastalSky(skyTexture) {
       `,
     );
   }
+  sky.material.fog = true;
+  Object.assign(sky.material.uniforms, THREE.UniformsUtils.clone(THREE.UniformsLib.fog));
+  // Match built-in fog after output conversion, including below the horizon.
+  // Otherwise the camera's far clip replaces fogged ground with unrelated sky.
+  sky.material.fragmentShader = `#ifdef USE_FOG\nuniform vec3 fogColor;\n#endif\n${sky.material.fragmentShader}`.replace(
+    '#include <colorspace_fragment>',
+    `#include <colorspace_fragment>
+     #ifdef USE_FOG
+     float coastElevation = normalize(vWorldPosition - cameraPosition).y;
+     float coastHaze = 1.0 - smoothstep(0.0, 0.12, coastElevation);
+     gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, coastHaze);
+     #endif`,
+  );
   return sky;
 }
 
@@ -84,13 +97,13 @@ const PRESETS = {
     rayleigh: 2.35,
     mieCoefficient: 0.0105,
     mieDirectionalG: 0.86,
-    exposure: 0.54,
-    sunIntensity: 2.15,
+    exposure: 0.58,
+    sunIntensity: 1.85,
     sunColor: '#ffc795',
-    hemiIntensity: 0.62,
+    hemiIntensity: 0.74,
     hemiSky: '#9fb8c2',
     hemiGround: '#786b63',
-    ambientIntensity: 0.16,
+    ambientIntensity: 0.1,
     fogColor: '#a9bcc0',
     fogDensity: 0.0034,
     waterColor: '#0c5360',
@@ -116,13 +129,13 @@ const PRESETS = {
     rayleigh: 1.65,
     mieCoefficient: 0.002,
     mieDirectionalG: 0.78,
-    exposure: 0.68,
-    sunIntensity: 3.0,
+    exposure: 0.72,
+    sunIntensity: 2.55,
     sunColor: '#fff6e6',
-    hemiIntensity: 0.72,
+    hemiIntensity: 0.88,
     hemiSky: '#bdd9e3',
     hemiGround: '#928977',
-    ambientIntensity: 0.1,
+    ambientIntensity: 0.06,
     fogColor: '#a0c9d3',
     fogDensity: 0.00108,
     waterColor: '#187c89',
@@ -148,13 +161,13 @@ const PRESETS = {
     rayleigh: 1.12,
     mieCoefficient: 0.009,
     mieDirectionalG: 0.87,
-    exposure: 0.51,
-    sunIntensity: 2.6,
+    exposure: 0.58,
+    sunIntensity: 2.2,
     sunColor: '#ffb178',
-    hemiIntensity: 0.66,
+    hemiIntensity: 0.78,
     hemiSky: '#8297aa',
     hemiGround: '#665950',
-    ambientIntensity: 0.14,
+    ambientIntensity: 0.08,
     fogColor: '#947e7a',
     fogDensity: 0.00235,
     waterColor: '#123f4a',
@@ -180,13 +193,13 @@ const PRESETS = {
     rayleigh: 0.34,
     mieCoefficient: 0.002,
     mieDirectionalG: 0.7,
-    exposure: 0.72,
-    sunIntensity: 1.35,
+    exposure: 0.76,
+    sunIntensity: 0.9,
     sunColor: '#b6ceff',
-    hemiIntensity: 0.62,
+    hemiIntensity: 0.72,
     hemiSky: '#273d59',
     hemiGround: '#253638',
-    ambientIntensity: 0.24,
+    ambientIntensity: 0.16,
     fogColor: '#112832',
     fogDensity: 0.0022,
     waterColor: '#041d2a',
@@ -717,15 +730,15 @@ export class BeachEnvironment {
       quality === 'high' ? 2048 : 1024,
       quality === 'high' ? 2048 : 1024,
     );
-    this.sunLight.shadow.camera.left = -52;
-    this.sunLight.shadow.camera.right = 52;
-    this.sunLight.shadow.camera.top = 44;
-    this.sunLight.shadow.camera.bottom = -32;
+    this.sunLight.shadow.camera.left = -48;
+    this.sunLight.shadow.camera.right = 48;
+    this.sunLight.shadow.camera.top = 46;
+    this.sunLight.shadow.camera.bottom = -30;
     this.sunLight.shadow.camera.near = 1;
     this.sunLight.shadow.camera.far = 170;
     this.sunLight.shadow.bias = -0.00025;
-    this.sunLight.shadow.normalBias = 0.025;
-    this.sunLight.shadow.radius = 2.2;
+    this.sunLight.shadow.normalBias = 0.035;
+    this.sunLight.shadow.radius = quality === 'high' ? 3.2 : 2.2;
     this.scene.add(this.sunLight);
     this.scene.add(this.sunLight.target);
     this.sunLight.target.position.set(0, 0, 18);
@@ -793,6 +806,7 @@ export class BeachEnvironment {
       const beachVisible = this.world.beach.visible;
       this.world.beach.visible = true;
       this.world.seabed.visible = true;
+      this.world.coastContinuation.visible = true;
       try {
         this.oceanRefraction.capture(activeRenderer, activeScene, activeCamera,
           [this.sky, this.clouds, this.stars, this.moon, this.moonHalo]);

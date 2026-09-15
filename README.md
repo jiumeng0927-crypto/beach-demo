@@ -7,7 +7,19 @@ PBR 材质、与海浪相位联动的 GLSL 泡沫、近岸淡出的低频远海�
 
 ## 运行
 
-当前 `0.43.0`：明确区分观察与击球。观察可自由转动镜头，只有击球状态可拉杆；拉杆期间相机位置、朝向、目标点和出杆方向锁定，斜向拖动只影响力度。击球后自动回到观察，切换/取消不误击。用本地 CC0 台球录音及其滤波衍生音替代合成音调。见 [状态与锁镜学习记录](docs/BILLIARDS_INTERACTION_043.md)，专项验证为 `npm run test:billiards-presentation`。
+本仓库保留**手动上传网页成品**：开发入口是 `dev.html`，根目录 `index.html` 是发布快照。`npm run dev` 使用源码；`npm run export:web` 构建并同步最新成品，不上传网络。见 [手动发布说明](docs/MANUAL_PUBLISH.md)。
+
+当前 `0.46.0`：潮汐拾光增加本地库存、潮贝和购买系统。海玻璃、空贝壳与净滩瓶罐可在潮岸小铺出售；潮汐图谱显示未发现目标距离，加固拾光袋提高之后的单件售价，纪念徽章作为交易收藏。旧版拾取存档会自动迁移。游客由六位扩展为十位，新增店主、咖啡店员、净滩志愿者和沙滩游客；仍只加载四份共享 GLB。见 [拾光交易与场景收敛学习记录](docs/COASTAL_MARKET_046.md)。
+
+按照场景截图复核，删除屋后绿色空地、叶簇、两端过长公路及外围露出的沙地长尾，只保留三家商铺周围 104 个世界单位的有效街段。外围地形仍完整封闭，但快速下潜到水下；海面两侧各用两个远海三角形接入雾区，消除高位沿岸视角的斜切硬边。主沙滩、台球、18 个拾取点和商铺位置不变。
+
+`0.45.0` 增加三家商铺、道路、CC0 户外桌椅和花箱，并细化主沙滩设施、房屋及光影。后续 `0.46.0` 已收短道路并移除屋后绿化边界。见 [海滨街区学习记录](docs/COASTAL_STREET_045.md)。
+
+主沙滩保留四张躺椅、原有三把遮阳伞和带爬梯/救生圈的瞭望点；删除遮挡视线的大型帆布棚及两把重复遮阳伞，并减少随机草、石子和贝壳，使主要动线更清楚。咖啡店保留外摆桌椅，小铺保留货架与木箱；房屋补齐山墙封口、檐口、雨水管、侧窗及遮阳支架。直射光强度、天空补光、曝光和软阴影也重新平衡，原有台球场、栈道和 18 处收集点不变。
+
+`0.44.0`：修复侧面和高处看到沙地、海底及海面矩形尽头的问题。外围地形逐点接续原网格，远海延展至相机裁剪范围之外，天空地平线与场景雾色同步。原有布局、近岸网格和台球操作不变。见 [场景边界学习记录](docs/SCENE_BOUNDARIES_044.md)，专项验证为 `npm run test:boundary`。
+
+`0.43.0`：明确区分观察与击球。观察可自由转动镜头，只有击球状态可拉杆；拉杆期间相机位置、朝向、目标点和出杆方向锁定，斜向拖动只影响力度。击球后自动回到观察，切换/取消不误击。用本地 CC0 台球录音及其滤波衍生音替代合成音调。见 [状态与锁镜学习记录](docs/BILLIARDS_INTERACTION_043.md)，专项验证为 `npm run test:billiards-presentation`。
 
 `0.42.0`：加入实体球杆、方向微调、力度控制及倒角木框、六脚支撑、袋圈和台呢细化。沙滩布局和中八物理不变。历史实现见 [台球视听学习记录](docs/BILLIARDS_PRESENTATION_042.md)，其俯视拖拽和合成音效已由 0.43 替代。
 
@@ -31,8 +43,8 @@ PBR 材质、与海浪相位联动的 GLSL 泡沫、近岸淡出的低频远海�
 
 继续细化了冲浪板的弧面厚度、翘头、中线和尾鳍，补齐遮阳伞垂边、连接环及支架底脚、斜撑；场景地标和台球物理不变。
 
-Windows 下可直接双击根目录的 `启动网页.cmd`。首次运行会安装依赖、生成生产构建并打开
-正确地址；服务脱离命令窗口在后台运行，重复双击会复用原进程。结束时双击 `停止网页.cmd`。
+Windows 下可直接双击根目录的 `启动网页.cmd`，打开已导出的网页快照。修改源码后先执行
+`npm run export:web` 更新快照；启动脚本本身不重新构建。服务在后台运行，重复双击会复用原进程。结束时双击 `停止网页.cmd`。
 
 命令行开发：
 
@@ -66,6 +78,7 @@ npm run build
 npm run test:production
 npm run test:water-quality
 npm run test:swash
+npm run test:boundary
 npm run test:living-coast
 npm run test:server
 npm run test:gpu
@@ -100,6 +113,9 @@ npm run test:visual
 - `src/experience/CoastalProps.js`：内置 GLB 的归一化、批量布置、贴地、碰撞与资源所有权
 - `src/experience/CoastalStyle.js`：共用海滨配色、扫描模型 PBR 协调与布料细节
 - `src/experience/BeachDiscoveryGame.js`：海玻璃收集、射线交互与拾取动画
+- `src/experience/CollectionCampaign.js`：三章拾取、库存、交易、购买与存档迁移
+- `src/ui/CollectionJournal.js`：图鉴与潮岸小铺交易界面
+- `src/experience/BeachNpcSystem.js`：十位游客、共享骨骼资源、巡逻、对话与移动端可见性
 - `src/experience/DiscoveryResources.js`：拾取玩法的延迟资源规格与精确字节预算
 - `src/experience/BeachBilliardsGame.js`：沙滩台球输入、cannon-es 物理、落袋、计分与资源生命周期
 - `src/experience/ChineseEightBallRules.js`：独立的中八规则、回合与犯规状态

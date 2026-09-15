@@ -2849,15 +2849,13 @@ try {
       dawnState.lighting.sunColor === dayState.lighting.sunColor ||
       dawnState.lighting.fogColor === dayState.lighting.fogColor ||
       dawnState.water.horizonColor === dayState.water.horizonColor ||
-      dawnState.render.calls - dayState.render.calls !==
-        expectedLanternDrawSaving ||
-      dawnState.render.triangles - dayState.render.triangles !==
-        expectedLanternTriangleSaving ||
       dawnStats.standardDeviation < 12 ||
       dawnStats.colorBins < 24
     ) {
       failures.push(`${result.viewport.name}: dawn mist preset failed`);
     }
+    // Compare lantern cost with the same camera, sun and frozen animation.
+    // Different sun positions can change the street's shadow-caster frustum.
     const daylightCulling = result.daylightCulling;
     if (
       !daylightCulling ||
@@ -3709,7 +3707,7 @@ try {
       pipeline.coconutBatches !== 1 ||
       pipeline.coconutInstances !== 20 ||
       !pipeline.grassShaderCompiled ||
-      pipeline.grassInstances !== (result.viewport.mobile ? 200 : 460) ||
+      pipeline.grassInstances !== (result.viewport.mobile ? 70 : 300) ||
       pipeline.boardwalkPlanks !== (result.viewport.mobile ? 24 : 32) ||
       pipeline.boardwalkPosts !== (result.viewport.mobile ? 14 : 18) ||
       !pipeline.shadeShelter ||
@@ -3717,8 +3715,8 @@ try {
       pipeline.footprintInstances !== (result.viewport.mobile ? 0 : 70) ||
       !pipeline.tidePools ||
       pipeline.reflectionExclusions !==
-        // Eight dry-land detail objects added in the model refinement pass.
-        (result.viewport.mobile ? 30 : 31) +
+        // Includes the outer coast, hidden only during mirror capture.
+        (result.viewport.mobile ? 32 : 33) +
           (result.debugState.rain.initialized ? 1 : 0)
     ) {
       failures.push(`${result.viewport.name}: shared material pipeline is incomplete`);
@@ -3995,7 +3993,7 @@ try {
         Math.hypot(edgeVelocity[0] ?? 1, edgeVelocity[2] ?? 1) > 0.01 ||
         boundedPosition[0] !== 45 ||
         boundedPosition[1] !== transition.bounded.free.minimumHeight ||
-        boundedPosition[2] !== 56 ||
+        boundedPosition[2] !== 87 ||
         transition.restoredMode !== 'orbit' ||
         transition.restored.state.mode !== 'orbit' ||
         transition.restored.state.free.enabled ||
@@ -4007,7 +4005,7 @@ try {
         restoredTarget[1] < 0.8 ||
         restoredTarget[1] > 16 ||
         restoredTarget[2] < -36 ||
-        restoredTarget[2] > 56
+        restoredTarget[2] > 87
       ) {
         failures.push(`${result.viewport.name}: free camera transition failed`);
       }

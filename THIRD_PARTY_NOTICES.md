@@ -7,7 +7,8 @@ not relicense third-party assets or dependencies.
 | --- | --- | --- | --- |
 | Billiard ball clack (public HQ MP3 preview) | Za-Games | CC0-1.0 | [Author/source](https://freesound.org/people/Za-Games/sounds/539854/), [manifest](public/audio/billiards/manifest.json), [license](https://creativecommons.org/publicdomain/zero/1.0/) |
 | Six coastal GLB assets | Poly Haven contributors | CC0-1.0 | [Asset manifest](public/models/coastal/manifest.json), [credits](docs/THIRD_PARTY_COASTAL_ASSETS.md) |
-| Two casual NPCs | Quaternius | CC0-1.0 | [Manifest](public/models/npc/manifest.json), [source](https://quaternius.com/packs/ultimatedanimatedcharacter.html) |
+| Outdoor table/chair set and planter box | James Ray Cock / Poly Haven | CC0-1.0 | [Manifest](public/models/street/manifest.json), [table/chairs](https://polyhaven.com/a/outdoor_table_chair_set_01), [planter](https://polyhaven.com/a/planter_box_01), [license](https://polyhaven.com/license) |
+| Two casual NPC bases and two lightweight crowd derivatives | Quaternius; coastal modifications by this project | CC0-1.0; authored modifications MIT | [Manifest](public/models/npc/manifest.json), [source](https://quaternius.com/packs/ultimatedanimatedcharacter.html) |
 | Coastal pure-sky HDRI | Greg Zaal, Jarod Guest | CC0-1.0 | [Source](https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky), [manifest](public/textures/manifest.json) |
 | Water normal texture | Three.js authors | MIT | [Unmodified r160 source](https://github.com/mrdoob/three.js/blob/r160/examples/textures/waternormals.jpg), [manifest](public/textures/manifest.json) |
 | Three.js | Three.js authors | MIT | Installed package LICENSE, [upstream](https://github.com/mrdoob/three.js/blob/r160/LICENSE) |

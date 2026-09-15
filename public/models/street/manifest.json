@@ -1,0 +1,118 @@
+[
+  {
+    "id": "outdoor_table_chair_set_01",
+    "name": "Outdoor Table Chair Set 01",
+    "authors": {
+      "James Ray Cock": "All"
+    },
+    "source": "https://polyhaven.com/a/outdoor_table_chair_set_01",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "outdoor_table_chair_set_01.glb",
+    "dependencies": [
+      {
+        "path": "outdoor_table_chair_set_01.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/outdoor_table_chair_set_01/outdoor_table_chair_set_01_1k.gltf",
+        "md5": "e5f81fc86b52135f5a5897a51b859b07",
+        "bytes": 6826
+      },
+      {
+        "path": "textures/outdoor_table_chair_set_01_table_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/outdoor_table_chair_set_01/outdoor_table_chair_set_01_table_nor_gl_1k.jpg",
+        "md5": "d284647b39e4ecda93b3ea85f40dc2d7",
+        "bytes": 43095
+      },
+      {
+        "path": "textures/outdoor_table_chair_set_01_chair_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/outdoor_table_chair_set_01/outdoor_table_chair_set_01_chair_arm_1k.jpg",
+        "md5": "52352847c3ce824803a9d500eec5614d",
+        "bytes": 179920
+      },
+      {
+        "path": "textures/outdoor_table_chair_set_01_table_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/outdoor_table_chair_set_01/outdoor_table_chair_set_01_table_arm_1k.jpg",
+        "md5": "cf5aa95ce8b83991eaf5048eacea0611",
+        "bytes": 201642
+      },
+      {
+        "path": "textures/outdoor_table_chair_set_01_table_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/outdoor_table_chair_set_01/outdoor_table_chair_set_01_table_diff_1k.jpg",
+        "md5": "afd8871dffcad88170a27b5fce6e3c7d",
+        "bytes": 151897
+      },
+      {
+        "path": "outdoor_table_chair_set_01.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/outdoor_table_chair_set_01/outdoor_table_chair_set_01.bin",
+        "md5": "8596ca40855bc417ac5248a54bd85990",
+        "bytes": 456856
+      },
+      {
+        "path": "textures/outdoor_table_chair_set_01_chair_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/outdoor_table_chair_set_01/outdoor_table_chair_set_01_chair_nor_gl_1k.jpg",
+        "md5": "ac08f5c3335c94e1dca986383265c23a",
+        "bytes": 46772
+      },
+      {
+        "path": "textures/outdoor_table_chair_set_01_chair_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/outdoor_table_chair_set_01/outdoor_table_chair_set_01_chair_diff_1k.jpg",
+        "md5": "cb6d4004ad957a6b89aabe4c8dddd6fd",
+        "bytes": 155372
+      }
+    ],
+    "sourceTriangles": 9828,
+    "triangles": 1595,
+    "textureLimit": 512,
+    "bytes": 336892,
+    "sha256": "0ef8719f7663b293247e619be41e4f881f78ba9f2262a05614d1fd09277b4192",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  },
+  {
+    "id": "planter_box_01",
+    "name": "Planter Box 01",
+    "authors": {
+      "James Ray Cock": "All"
+    },
+    "source": "https://polyhaven.com/a/planter_box_01",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "planter_box_01.glb",
+    "dependencies": [
+      {
+        "path": "planter_box_01.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/planter_box_01/planter_box_01_1k.gltf",
+        "md5": "731d186af61b042dc4b4a2cd4744c35a",
+        "bytes": 2787
+      },
+      {
+        "path": "textures/planter_box_01_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/planter_box_01/planter_box_01_nor_gl_1k.jpg",
+        "md5": "a1b6f6fd3d45f05c9554e6a59fe0cab2",
+        "bytes": 707323
+      },
+      {
+        "path": "textures/planter_box_01_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/planter_box_01/planter_box_01_arm_1k.jpg",
+        "md5": "201a4279feacf18a18e15af184fb4e52",
+        "bytes": 745610
+      },
+      {
+        "path": "planter_box_01.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/planter_box_01/planter_box_01.bin",
+        "md5": "644c9dedd7c8b090a10fa2be597d36bb",
+        "bytes": 250580
+      },
+      {
+        "path": "textures/planter_box_01_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/planter_box_01/planter_box_01_diff_1k.jpg",
+        "md5": "f30b51ecd4af4d14cfa94794d6b47787",
+        "bytes": 633117
+      }
+    ],
+    "sourceTriangles": 8094,
+    "triangles": 576,
+    "textureLimit": 512,
+    "bytes": 192724,
+    "sha256": "499e328e2ca6203d12eddc5171da64bb39798d62b6b04047d91bf4323f213b26",
+    "processing": "Blender 4.5 decimation, reduced textures, embedded glTF 2.0"
+  }
+]

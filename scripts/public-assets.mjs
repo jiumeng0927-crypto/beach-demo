@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..', 'public');
-const directories = ['models/coastal', 'models/npc', 'textures', 'audio/billiards'];
+const directories = ['models/coastal', 'models/street', 'models/npc', 'textures', 'audio/billiards'];
 
 export function verifiedPublicFiles() {
   const files = ['favicon.svg'];

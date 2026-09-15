@@ -1,32 +1,83 @@
 import * as THREE from 'three';
 import { OCEAN_SWELL_FADE_START_Z, OCEAN_SWELL_FADE_END_Z } from './OceanSwell.js';
+import { COAST_EXTENT } from './CoastBoundary.js';
 
 export function createOceanGeometry(quality = 'high') {
   const sx = quality === 'high' ? 128 : 96, sy = quality === 'high' ? 96 : 72;
   const geometry = new THREE.PlaneGeometry(1, 1, sx, sy);
   const positions = geometry.attributes.position;
   const spacing = new Float32Array(positions.count);
-  const coastZ = (t) => t < 0.12 ? 40 - t * 250
+  const originalZ = (t) => t < 0.12 ? 40 - t * 250
     : t < 0.64 ? 10 - (t - 0.12) * 55 / 0.52
       : -45 - Math.pow((t - 0.64) / 0.36, 2) * 1000;
+  const extend = (value, start, edge) => value + (COAST_EXTENT - edge)
+    * Math.pow(Math.max(0, (value - start) / (edge - start)), 3);
+  const coastX = (x) => Math.sign(x) * extend(Math.abs(x * 70 + x ** 5 * 530), 160, 600);
+  const coastZ = (t) => {
+    const z = originalZ(t);
+    return z < -180 ? -extend(-z, 180, 1045) : z;
+  };
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i) * 2, t = 0.5 - positions.getY(i);
-    positions.setXYZ(i, x * 70 + x ** 5 * 530, -119 - coastZ(t), 0);
-    spacing[i] = Math.max((70 + 2650 * x ** 4) * 2 / sx,
-      Math.abs(coastZ(Math.min(1, t + 1 / sy)) - coastZ(Math.max(0, t - 1 / sy))) * 0.5);
+    positions.setXYZ(i, coastX(x), -119 - coastZ(t), 0);
+    // Actual adjacent spacing includes outer-grid stretching, so unresolved
+    // Gerstner waves cannot turn distant cells into giant animated triangles.
+    spacing[i] = Math.max(
+      Math.abs(coastX(Math.min(1, x + 2 / sx)) - coastX(x)),
+      Math.abs(coastX(x) - coastX(Math.max(-1, x - 2 / sx))),
+      Math.abs(coastZ(Math.min(1, t + 1 / sy)) - coastZ(t)),
+      Math.abs(coastZ(t) - coastZ(Math.max(0, t - 1 / sy))));
   }
-  geometry.setAttribute('oceanSpacing', new THREE.BufferAttribute(spacing, 1));
   // The nonuniform depth mapping reverses PlaneGeometry's row direction.
-  const indices = geometry.index.array;
-  for (let i = 0; i < indices.length; i += 3) {
-    [indices[i + 1], indices[i + 2]] = [indices[i + 2], indices[i + 1]];
+  const baseIndices = geometry.index.array;
+  for (let i = 0; i < baseIndices.length; i += 3) {
+    [baseIndices[i + 1], baseIndices[i + 2]] = [baseIndices[i + 2], baseIndices[i + 1]];
   }
+
+  // Continue the water landward only beyond the authored beach's side edges.
+  // These four flat triangles hide the finite ocean edge in along-shore views
+  // without flooding the playable sand or adding unresolved distant waves.
+  const wingPositions = new Float32Array([
+    -COAST_EXTENT, -159, 0, -130, -159, 0,
+    -COAST_EXTENT, -COAST_EXTENT - 119, 0, -130, -COAST_EXTENT - 119, 0,
+    130, -159, 0, COAST_EXTENT, -159, 0,
+    130, -COAST_EXTENT - 119, 0, COAST_EXTENT, -COAST_EXTENT - 119, 0,
+  ]);
+  const baseVertexCount = positions.count;
+  const mergedPositions = new Float32Array(positions.array.length + wingPositions.length);
+  mergedPositions.set(positions.array);
+  mergedPositions.set(wingPositions, positions.array.length);
+  const mergedNormals = new Float32Array(geometry.attributes.normal.array.length + 24);
+  mergedNormals.set(geometry.attributes.normal.array);
+  for (let i = geometry.attributes.normal.array.length; i < mergedNormals.length; i += 3) {
+    mergedNormals.set([0, 0, 1], i);
+  }
+  const mergedUvs = new Float32Array(geometry.attributes.uv.array.length + 16);
+  mergedUvs.set(geometry.attributes.uv.array);
+  mergedUvs.set([0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0], geometry.attributes.uv.array.length);
+  const mergedSpacing = new Float32Array(spacing.length + 8);
+  mergedSpacing.set(spacing);
+  mergedSpacing.fill(COAST_EXTENT, spacing.length);
+  const mergedIndices = new baseIndices.constructor(baseIndices.length + 12);
+  mergedIndices.set(baseIndices);
+  mergedIndices.set([
+    baseVertexCount, baseVertexCount + 2, baseVertexCount + 1,
+    baseVertexCount + 2, baseVertexCount + 3, baseVertexCount + 1,
+    baseVertexCount + 4, baseVertexCount + 6, baseVertexCount + 5,
+    baseVertexCount + 6, baseVertexCount + 7, baseVertexCount + 5,
+  ], baseIndices.length);
+  geometry.setAttribute('position', new THREE.BufferAttribute(mergedPositions, 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(mergedNormals, 3));
+  geometry.setAttribute('uv', new THREE.BufferAttribute(mergedUvs, 2));
+  geometry.setAttribute('oceanSpacing', new THREE.BufferAttribute(mergedSpacing, 1));
+  geometry.setIndex(new THREE.BufferAttribute(mergedIndices, 1));
   geometry.computeBoundingBox();
   geometry.boundingBox.min.z = -4;
   geometry.boundingBox.max.z = 4;
   geometry.boundingSphere = new THREE.Sphere();
   geometry.boundingBox.getBoundingSphere(geometry.boundingSphere);
   geometry.userData.oceanQuality = quality;
+  geometry.userData.horizonWingTriangles = 4;
   return geometry;
 }
 
@@ -91,6 +142,7 @@ export const OCEAN_FRAGMENT_SHADER = /* glsl */ `
   uniform sampler2D normalSampler;
   uniform sampler2D uRefractionColor;
   uniform sampler2D uRefractionDepth;
+  uniform vec2 uRefractionTexelSize;
   uniform float time;
   uniform float distortionScale;
   uniform float uReflectionStrength;
@@ -122,7 +174,19 @@ export const OCEAN_FRAGMENT_SHADER = /* glsl */ `
   #include <shadowmask_pars_fragment>
 
   float sceneDistance(vec2 uv) {
-    return -perspectiveDepthToViewZ(texture2D(uRefractionDepth, uv).x, uCameraNear, uCameraFar);
+    // The depth target is smaller on mobile. Nearest sampling produces dry/wet
+    // bands against the full-resolution water plane; reconstruct window depth
+    // at the actual pixel before linearizing. Keep the depth sampler NEAREST:
+    // hardware filtering of depth components is not portable across devices.
+    vec2 pixel = uv / uRefractionTexelSize - 0.5;
+    vec2 base = (floor(pixel) + 0.5) * uRefractionTexelSize;
+    vec2 weight = fract(pixel);
+    float a = texture2D(uRefractionDepth, base).x;
+    float b = texture2D(uRefractionDepth, base + vec2(uRefractionTexelSize.x, 0.0)).x;
+    float c = texture2D(uRefractionDepth, base + vec2(0.0, uRefractionTexelSize.y)).x;
+    float d = texture2D(uRefractionDepth, base + uRefractionTexelSize).x;
+    float windowDepth = mix(mix(a, b, weight.x), mix(c, d, weight.x), weight.y);
+    return -perspectiveDepthToViewZ(windowDepth, uCameraNear, uCameraFar);
   }
 
   vec2 capillarySlope(vec2 p, vec2 direction, float wavelength, float amplitude) {
@@ -139,14 +203,21 @@ export const OCEAN_FRAGMENT_SHADER = /* glsl */ `
     float distanceToEye = length(eye - worldPosition.xyz);
     vec2 p = worldPosition.xz;
     vec2 a = texture2D(normalSampler, p * vec2(0.045, 0.085) + time * vec2(0.004, -0.012)).xy * 2.0 - 1.0;
-    vec2 b = texture2D(normalSampler, p.yx * vec2(0.11, 0.065) + time * vec2(-0.009, 0.004)).xy * 2.0 - 1.0;
+    // This layer swaps its UV axes; its sampled slope must use the same frame.
+    vec2 b = (texture2D(normalSampler, p.yx * vec2(0.11, 0.065) + time * vec2(-0.009, 0.004)).xy * 2.0 - 1.0).yx;
     vec2 c = texture2D(normalSampler, p * 0.31 + time * vec2(0.012, -0.021)).xy * 2.0 - 1.0;
     float fineFade = 1.0 - smoothstep(60.0, 260.0, distanceToEye);
     vec2 warpedP = p + a * 1.7 + b * 0.8;
     vec2 slope = capillarySlope(warpedP, normalize(vec2(0.18, 1.0)), 5.3, 0.019)
       + capillarySlope(warpedP, normalize(vec2(-0.38, 1.0)), 2.7, 0.007)
       + capillarySlope(warpedP, normalize(vec2(0.71, 0.70)), 1.25, 0.002);
-    vec2 ripple = (a * 0.21 + b * 0.16 + c * 0.055 * fineFade - slope) * (0.35 + uWindFactor * 0.65);
+    // Fade unresolved surface detail by pixel footprint, not distance alone.
+    // Grazing views can span many world units even close to the camera.
+    float footprint = max(length(dFdx(p)), length(dFdy(p)));
+    float mediumDetail = 1.0 - smoothstep(0.45, 2.8, footprint);
+    float fineDetail = fineFade * (1.0 - smoothstep(0.12, 0.8, footprint));
+    vec2 ripple = (a * 0.14 + b * 0.095 * mediumDetail + c * 0.028 * fineDetail - slope)
+      * (0.35 + uWindFactor * 0.65);
     ripple *= 1.0 - smoothstep(220.0, 900.0, distanceToEye);
     vec3 surfaceNormal = normalize(vOceanNormal + vec3(ripple.x, 0.0, ripple.y));
     vec2 screenUv = vOceanClip.xy / vOceanClip.w * 0.5 + 0.5;
@@ -187,7 +258,7 @@ export const OCEAN_FRAGMENT_SHADER = /* glsl */ `
     float nDotL = max(dot(surfaceNormal, sunDirection), 0.0);
     // Broaden subpixel glints instead of letting fine normal detail sparkle.
     float normalVariance = dot(dFdx(surfaceNormal), dFdx(surfaceNormal)) + dot(dFdy(surfaceNormal), dFdy(surfaceNormal));
-    float roughness = clamp(0.12 + (1.0 - fineFade) * 0.10 + normalVariance * 0.65, 0.12, 0.36);
+    float roughness = clamp(0.12 + (1.0 - fineDetail) * 0.10 + normalVariance * 0.65, 0.12, 0.36);
     float alpha2 = pow(roughness, 4.0);
     float denom = nDotH * nDotH * (alpha2 - 1.0) + 1.0;
     float distribution = alpha2 / max(3.14159 * denom * denom, 0.00001);
@@ -198,19 +269,26 @@ export const OCEAN_FRAGMENT_SHADER = /* glsl */ `
     color += sunColor * specular * uSunGlintStrength * getShadowMask();
     float shoreFoam = (1.0 - smoothstep(0.035, 0.48, depth)) * smoothstep(0.003, 0.045, depth);
     shoreFoam *= smoothstep(0.18, 0.73, a.x * b.y + 0.5) * 0.42;
-    float crestFoam = smoothstep(0.28, 0.62, vOceanCrest) * smoothstep(0.34, 0.80, a.y * b.x + 0.5);
-    crestFoam *= smoothstep(0.025, 0.11, length(vOceanNormal.xz)) * 0.22;
+    // A raised wave is not necessarily breaking. Keep whitecaps sparse in a
+    // breeze and confine them to steep, exposed crests in deeper water.
+    float crestFoam = smoothstep(0.34, 0.82, vOceanCrest) * smoothstep(0.53, 0.82, a.y * b.x + 0.5);
+    crestFoam *= smoothstep(0.10, 0.24, length(vOceanNormal.xz))
+      * smoothstep(0.65, 1.75, uWindFactor) * smoothstep(0.5, 2.5, depth) * 0.26;
     color = mix(color, vec3(0.86, 0.91, 0.87) * lightAmount, clamp((shoreFoam + crestFoam) * uFoamStrength, 0.0, 0.65));
     // Resolve the thin shoreline coverage before the grazing-angle reflection.
     // Without this, a barely submerged triangle turns into an opaque bright shard.
     float verticalDepth = depth * max(viewDirection.y, 0.05);
     float waterCoverage = smoothstep(0.002, max(0.10, fwidth(verticalDepth) * 1.5), verticalDepth);
     color = mix(refracted, color, waterCoverage);
-    color = mix(color, fogColor, smoothstep(300.0, 800.0, distanceToEye));
     gl_FragColor = vec4(color, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
     #include <fog_fragment>
+    // Three r160 supplies fogColor in the active target's output color space.
+    // Do not feed it back into linear lighting and convert it a second time.
+    #ifdef USE_FOG
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(300.0, 800.0, distanceToEye));
+    #endif
   }
 `;
 
@@ -228,6 +306,7 @@ export class OceanRefraction {
     this.disposed = false;
     Object.assign(water.material.uniforms, {
       uRefractionColor: { value: this.target.texture }, uRefractionDepth: { value: this.target.depthTexture },
+      uRefractionTexelSize: { value: new THREE.Vector2(1, 1) },
       uCameraNear: { value: 0.1 }, uCameraFar: { value: 1800 },
       uWindFactor: { value: 1 }, uDaylight: { value: 1 },
       uFoamStrength: { value: 0.85 },
@@ -244,6 +323,7 @@ export class OceanRefraction {
     const scale = Math.min(1, (this.quality === 'high' ? 1536 : 768) / Math.max(this.size.x, this.size.y));
     const width = Math.max(1, Math.round(this.size.x * scale)), height = Math.max(1, Math.round(this.size.y * scale));
     if (width !== this.target.width || height !== this.target.height) this.target.setSize(width, height);
+    this.water.material.uniforms.uRefractionTexelSize.value.set(1 / width, 1 / height);
     const previous = renderer.getRenderTarget(), face = renderer.getActiveCubeFace(), mip = renderer.getActiveMipmapLevel();
     renderer.getViewport(this.viewport);
     const shadows = renderer.shadowMap.autoUpdate, xr = renderer.xr.enabled, visible = this.water.visible;

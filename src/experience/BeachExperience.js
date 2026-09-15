@@ -16,6 +16,7 @@ import { GpuFrameTimer } from './GpuFrameTimer.js';
 import { LocalAssetManager } from './LocalAssetManager.js';
 import { RainSystem } from './RainSystem.js';
 import { createBeachWorld, terrainHeight } from './world.js';
+import { STREET_WALK_MAX_Z } from './CoastalStreet.js';
 
 // The entry view reads the path, activity clearing and shoreline together.
 const CAMERA_VIEWS = {
@@ -45,7 +46,7 @@ const BILLIARDS_CAMERA_VIEWS = {
 // sand or far beyond the authored shoreline.
 const ORBIT_TARGET_BOUNDS = new THREE.Box3(
   new THREE.Vector3(-45, 0.8, -36),
-  new THREE.Vector3(45, 16, 56),
+  new THREE.Vector3(45, 16, STREET_WALK_MAX_Z),
 );
 
 const WALK_ENTRY_POSITION = new THREE.Vector3(41, 0, 35);
@@ -1063,6 +1064,14 @@ export class BeachExperience extends EventTarget {
     return true;
   }
 
+  focusStreet() {
+    if (!this.camera || !this.controls) return;
+    if (this.cameraMode !== 'orbit') this.setCameraMode('orbit');
+    const mobile = this.camera.aspect < 1;
+    this.startCameraTween(new THREE.Vector3(-6, mobile ? 9 : 11, mobile ? 42 : 25),
+      new THREE.Vector3(-6, 4, 78));
+  }
+
   resetCamera() {
     if (!this.camera || !this.controls) return;
 
@@ -1126,6 +1135,7 @@ export class BeachExperience extends EventTarget {
   }
 
   renderScene(delta = 0) {
+    this.world?.street.updateVisibility(this.camera);
     if (!this.bloom?.render(delta)) {
       this.renderer.render(this.scene, this.camera);
     }

@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.46.0 - 2026-09-15
+
+- Connect all 18 beach discoveries to a persistent local economy. Collected sea glass, shells and litter enter an inventory that can be sold for tide coins; purchases include a distance clue, future sale bonus and collectible pin.
+- Add a dedicated journal/market view and a shopkeeper conversation that opens it. Validate purchases, balances and inventory before saving; migrate version-one discovery saves without losing found sites.
+- Expand the living scene from six to ten visitors with a shopkeeper, cafe attendant, cleanup volunteer and beach walker. Keep four shared source GLBs, independent animation state, interaction, collision and mobile nearest-four visibility budgeting.
+- Remove the empty green backland, decorative leaf field, long road tails and exposed outer sand tongues shown in review screenshots. Keep only the 104-unit shop street and the authored playable beach.
+- Sink the sealed terrain skirt below side sightlines and add two four-triangle ocean horizon wings. Preserve exact coast stitching while removing diagonal water edges in elevated along-shore views.
+- Add deterministic economy, migration, finite-street, NPC market-flow, horizon-wing and desktop/mobile visual regressions. Export the updated manual-upload web snapshot and learning guide.
+
+## 0.45.0 - 2026-09-15
+
+- Keep four slatted loungers and the rescue lookout, but remove the oversized fabric-roof lounge and two duplicate parasols after visual review. Reduce random grass, pebbles and shells so beach routes and landmarks remain readable.
+- Rebalance all time-of-day presets with gentler direct sunlight, stronger sky fill, lower flat ambient light and slightly higher exposure. Tighten the directional shadow camera and soften high-quality shadows while retaining ACES tone mapping and PCF soft shadows.
+- Close shop gables; add side windows, fascia, downpipes, awning posts, counters and display shelves. Reanchor imported street props and their collision/vegetation bounds when quality changes.
+- Rebudget tiny shell/lifering meshes with unchanged PBR maps, and use tight-box culling for non-shadow-casting street objects rather than oversized bounding spheres.
+- Replace bare backland behind the shops with a raised green boundary and 18 instanced leaf clusters. Retain a sealed ground surface and the original playable coast.
+- Expand visitors from two to six, including two sidewalk patrols that pause for conversations and nearby walkers. Derive two lightweight rigged GLBs, share source geometry/materials with independent skeletons, and retain original quests.
+- Reduce low-quality grass and roof/road subdivisions to offset street content. Keep the existing frame budgets; compare lantern culling under identical lighting instead of unrelated day/dawn shadow frusta.
+- Add an inland coastal street with three shopfronts, pitched roofs, awnings, signs, opaque PBR glazing, emissive night windows, benches and lamps. Preserve the authored beach and gameplay layout.
+- Add a curved two-lane road with shader-painted markings, a crossing, shoulders and a beach access path. Share sampled road/apron geometry with walking height, clear vegetation locally, add shop/bench/lamp collisions, and extend inland navigation to Z=87.
+- Import two CC0 Poly Haven assets: an outdoor table/chair set and planter box. Prepare bounded GLBs in Blender, keep local hashes and provenance, reuse the established loader, palette treatment and lifecycle.
+- Add Settings > Coastal Street framing without resetting the game. Correct output-space ocean haze ordering, reorient swapped normal detail, filter subpixel ripples and limit whitecaps to windy, steep crests.
+- Add street geometry/grounding/collision/lifecycle checks and desktop/mobile day/night screenshots. Keep manual web upload and source/publication separation.
+
+## 0.44.0 - 2026-09-14
+
+- Continue in the user's Beach demo Git repository. Separate dev.html from the tracked index.html publication snapshot; add export:web for the explicitly retained manual upload workflow, without deletion or network publication.
+- Reconstruct upsampled window depth explicitly to remove mobile shoreline bands. Include the outer seabed in refraction capture and add a GPU planar-depth interpolation regression.
+
+- Continue the original beach/seabed perimeter with four sparse outer rings, matching every boundary vertex and normal without modifying central terrain, foam diagonals, props or movement limits.
+- Extend only distant ocean samples to 3600 units with unchanged vertex counts; compute actual adjacent spacing for wave filtering and update culling bounds.
+- Blend the visible sky horizon into renderer-managed fog, respecting output color space, weather, time changes and render targets. The separate HDR lighting scene remains unchanged.
+- Add deterministic stitching, topology, coverage, near-water density and budget checks plus desktop/mobile four-direction screenshots, runtime ray coverage and exactly-once quality-switch disposal.
+
 ## 0.43.0 - 2026-09-14
 
 - Default to observation; only explicit shooting mode arms the cue and strike controls. Observation supports orbit/zoom even when dragging the white ball.

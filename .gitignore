@@ -3,6 +3,7 @@ dist/
 .vite/
 *.log
 .tideline-server.json
+.tideline-index.tmp
 screenshots/
 playwright-report/
 test-results/

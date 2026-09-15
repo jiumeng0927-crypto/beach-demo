@@ -40,11 +40,13 @@ try {
       const page = await context.newPage(), errors = [], requests = [];
       page.on('pageerror', (error) => errors.push(error.message));
       page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
-      page.on('request', (r) => { if (r.url().includes('/models/coastal/')) requests.push(r.url()); });
+      page.on('request', (r) => { if (/\/models\/(coastal|street)\//.test(r.url())) requests.push(r.url()); });
       await page.addInitScript(() => localStorage.setItem('tideline.control-guide.v4', 'seen'));
       await page.goto(url);
-      await page.waitForFunction(() => window.__TIDELINE__?.getState().initialized);
+      await page.waitForFunction(() => window.__TIDELINE__?.getState().initialized)
+        .catch(error => { throw new Error(`${error.message}; initialization errors: ${errors.join(' | ')}`); });
       await page.click('#start-button');
+      await page.evaluate(() => window.__TIDELINE__.experience.coastalProps.ready);
       await page.waitForTimeout(700);
       const state = await page.evaluate(() => {
         const e = window.__TIDELINE__.experience, props = e.coastalProps;
@@ -74,19 +76,25 @@ try {
           skyLinked: e.environment.sky.material.fragmentShader.includes('uCoastalDaylight')
             && e.environment.environmentSky.material.fragmentShader.includes('uCoastalDaylight'),
         };
+        const furniture = props.colliders.filter(c => ['beach-lounger', 'rescue-lookout'].includes(c.name));
+        const blockedSites = e.discovery.campaign.sites.flat().filter(site => furniture.some(c =>
+          c.type === 'circle' ? Math.hypot(site.x - c.x, site.z - c.z) < c.radius + 0.7
+            : Math.abs(site.x - c.x) < c.halfX + 0.7 && Math.abs(site.z - c.z) < c.halfZ + 0.7));
         e.world.beginReflectionPass();
         const hidden = !props.root.visible && props.reflectedRoot.visible;
         e.world.endReflectionPass();
-        return { ...props.getState(), materialStyle, hidden, restored: props.root.visible, finite, textured,
+        return { ...props.getState(), materialStyle, hidden, restored: props.root.visible, finite, textured, blockedSites: blockedSites.length,
           grounded: props.placements.every((p) => Math.abs(p.minY - p.ground) < 0.0001), render: e.getDebugState().render };
       });
-      assert.equal(state.loaded.length, 6); assert.deepEqual(state.errors, []);
-      assert.equal(state.instances, 16); assert.ok(state.textured >= 6);
+      assert.equal(state.loaded.length, 8); assert.deepEqual(state.errors, []);
+      assert.equal(state.instances, 23); assert.ok(state.textured >= 10);
+      assert.deepEqual(state.equipment, { umbrellas: 3, loungers: 4, rescueLookouts: 1 });
       assert.equal(state.replacedShoreRocks, 26); assert.equal(state.shoreShaderCompiled, true);
       assert.ok(state.shoreTriangles <= 13000);
       assert.ok(state.finite && state.grounded && state.hidden && state.restored);
-      assert.ok(state.triangles <= 55000 && state.batches <= 12);
-      assert.equal(requests.length, 6);
+      assert.equal(state.blockedSites, 0, 'New furniture cannot block the 18 collection sites');
+      assert.ok(state.triangles <= 58000 && state.batches <= 16);
+      assert.equal(requests.length, 8);
       assert.deepEqual(state.materialStyle.types, ['cloth', 'paint', 'scanned-pbr']);
       assert.equal(state.materialStyle.chair, 'cloth');
       assert.equal(state.materialStyle.clothColor, 0xad7066);
@@ -96,6 +104,7 @@ try {
       for (const [name, target, offset] of [
         ['overview', null, null], ['picnic', [-21, 0, 26], [5, 3.8, 6]],
         ['equipment', [38, 1.1, 25.8], [5.5, 3, 7]], ['shore', [-31, 0.4, 12.5], [6, 3, 7]],
+        ['lounge', [18, 1.1, 39], [9, 5, 10]], ['lookout', [31, 2, 43], [6, 3.5, 8]],
       ]) {
         if (target) await page.evaluate(({ target, offset, mobile }) => {
           const e = window.__TIDELINE__.experience;
@@ -116,12 +125,14 @@ try {
         const e = window.__TIDELINE__.experience, props = e.coastalProps, uuid = props.root.uuid;
         e.setQuality('low'); e.setQuality('high');
         return { same: e.coastalProps === props && uuid === props.root.uuid,
+          streetGrounded: props.placements.filter(p => p.surface === 'street').every(p =>
+            Math.abs(p.minY - (e.world.getWalkSurfaceHeight(p.x, p.z) - p.embed)) < 1e-8),
           registered: e.world.cameraColliderCount, colliders: props.colliders.length,
           prematureDisposals: [...window.__COASTAL_DISPOSES__.values()].some((n) => n > 0) };
       });
-      assert.ok(quality.same && !quality.prematureDisposals);
+      assert.ok(quality.same && quality.streetGrounded && !quality.prematureDisposals);
       assert.ok(quality.registered > quality.colliders);
-      assert.equal(requests.length, 6, 'Quality rebuild must not redownload assets');
+      assert.equal(requests.length, 8, 'Quality rebuild must not redownload assets');
       const disposed = await page.evaluate(() => {
         const e = window.__TIDELINE__.experience, root = e.coastalProps.root, reflected = e.coastalProps.reflectedRoot;
         e.dispose();
@@ -134,10 +145,12 @@ try {
   }
   const page = await browser.newPage();
   await page.route('**/models/coastal/*.glb', (route) => route.fulfill({ status: 404, body: 'Missing test asset' }));
+  await page.route('**/models/street/*.glb', (route) => route.fulfill({ status: 404, body: 'Missing test asset' }));
   await page.goto(url);
   await page.waitForFunction(() => window.__TIDELINE__?.getState().initialized);
+  await page.evaluate(() => window.__TIDELINE__.experience.coastalProps.ready);
   const fallback = await page.evaluate(() => window.__TIDELINE__.getState().coastalProps);
-  assert.equal(fallback.errors.length, 6);
+  assert.equal(fallback.errors.length, 8);
   assert.equal(fallback.loaded.length, 0);
   const earlyDispose = await page.evaluate(async () => {
     const e = window.__TIDELINE__.experience;

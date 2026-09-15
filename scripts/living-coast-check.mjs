@@ -93,7 +93,14 @@ try {
     await page.screenshot({ path: `screenshots/living-coast-041-${label}-journal.png` });
     await page.click('#collection-close');
     await page.evaluate(() => { const d = window.__TIDELINE__.experience.discovery; d.items.forEach((_, i) => d.collect(i)); });
-    await page.click('#collection-open'); await page.click('#collection-next');
+    await page.click('#collection-open'); await page.click('#collection-tab-market');
+    assert.equal(await page.locator('#market-coins').textContent(), '0');
+    assert.match(await page.locator('#market-inventory').textContent(), /海玻璃 × 6/);
+    await page.click('#market-sell-all'); assert.equal(await page.locator('#market-coins').textContent(), '48');
+    await page.click('[data-market-product="tide-map"]'); assert.equal(await page.locator('#market-coins').textContent(), '32');
+    assert.equal(await page.locator('[data-market-product="tide-map"]').textContent(), '已拥有');
+    await page.screenshot({ path: `screenshots/living-coast-041-${label}-market.png` });
+    await page.click('#collection-tab-journal'); await page.click('#collection-next');
     assert.equal(await page.evaluate(() => window.__TIDELINE__.experience.discovery.campaign.chapter), 1);
     const blocked = await page.evaluate(() => {
       const e = window.__TIDELINE__.experience; e.setTideMode('high'); e.discovery.tideLevel = 1;
@@ -123,7 +130,11 @@ try {
     });
     assert.deepEqual(collected, { first: true, duplicate: false, count: 7 });
     await page.reload(); await page.waitForFunction(() => window.__TIDELINE__?.getState().initialized); await page.click('#start-button');
-    assert.equal(await page.evaluate(() => window.__TIDELINE__.experience.discovery.campaign.getState().overallCollected), 7);
+    assert.deepEqual(await page.evaluate(() => {
+      const state = window.__TIDELINE__.experience.discovery.campaign.getState();
+      return { collected: state.overallCollected, coins: state.economy.coins,
+        shell: state.economy.inventory.shell, purchases: state.economy.purchases };
+    }), { collected: 7, coins: 32, shell: 1, purchases: ['tide-map'] });
     await page.evaluate(() => window.__TIDELINE__.experience.setTideMode('low'));
     await page.waitForFunction(() => window.__TIDELINE__.experience.discovery.tideLevel <= -.22);
     await page.evaluate(() => { const d = window.__TIDELINE__.experience.discovery; d.items.forEach((_, i) => d.collect(i)); });

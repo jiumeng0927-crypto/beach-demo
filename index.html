@@ -8,14 +8,14 @@
       content="潮汐沙岸，一处由 Three.js、实时水面与自定义 Shader 构成的沉浸式海岸场景。"
     />
     <meta name="theme-color" content="#132a2b" />
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./assets/favicon-3EaPP8b7.svg" type="image/svg+xml" />
     <title>潮汐沙岸 | Tideline</title>
-    <script type="module" crossorigin src="./assets/index-DBBCGSXJ.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/icons-CMpYR0WS.js">
-    <link rel="modulepreload" crossorigin href="./assets/three-core-BP5g306q.js">
-    <link rel="modulepreload" crossorigin href="./assets/three-addons-CJIzqHgj.js">
-    <link rel="modulepreload" crossorigin href="./assets/three-loaders-CnWNrwGX.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-CF934-VL.css">
+    <script type="module" crossorigin src="./assets/dev-BPzZIuHu.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/icons-BtdRTwib.js">
+    <link rel="modulepreload" crossorigin href="./assets/three-core-DliF7g28.js">
+    <link rel="modulepreload" crossorigin href="./assets/three-addons-BR_xR6D3.js">
+    <link rel="modulepreload" crossorigin href="./assets/three-loaders-DVOeQf6O.js">
+    <link rel="stylesheet" crossorigin href="./assets/dev-j6df0_o7.css">
   </head>
   <body>
     <main id="app" aria-busy="true">
@@ -276,10 +276,23 @@
 
         <dialog id="collection-dialog" class="collection-dialog" aria-labelledby="collection-title">
           <header><div><h2 id="collection-title">海岸图鉴</h2><p id="collection-summary"></p></div><button id="collection-close" class="icon-button" type="button" aria-label="关闭图鉴" title="关闭图鉴"><i data-lucide="x" aria-hidden="true"></i></button></header>
-          <label class="collection-select">记录章节<select id="collection-chapter"><option value="0">01 海玻璃标本</option><option value="1">02 退潮贝壳</option><option value="2">03 海岸清理</option></select></label>
-          <p id="collection-description"></p><ol id="collection-items"></ol>
-          <p id="collection-badges"></p>
-          <footer><button id="collection-hint" type="button" class="npc-action">寻找下一处</button><button id="collection-next" type="button" class="npc-action" hidden>开始下一章</button></footer>
+          <div class="collection-tabs" role="tablist" aria-label="海岸手记内容">
+            <button id="collection-tab-journal" type="button" role="tab" aria-selected="true" aria-controls="collection-journal-panel">图鉴</button>
+            <button id="collection-tab-market" type="button" role="tab" aria-selected="false" aria-controls="collection-market-panel">交易</button>
+          </div>
+          <section id="collection-journal-panel" role="tabpanel" aria-labelledby="collection-tab-journal">
+            <label class="collection-select">记录章节<select id="collection-chapter"><option value="0">01 海玻璃标本</option><option value="1">02 退潮贝壳</option><option value="2">03 海岸清理</option></select></label>
+            <p id="collection-description"></p><ol id="collection-items"></ol>
+            <p id="collection-badges"></p>
+            <footer><button id="collection-hint" type="button" class="npc-action">寻找下一处</button><button id="collection-next" type="button" class="npc-action" hidden>开始下一章</button></footer>
+          </section>
+          <section id="collection-market-panel" role="tabpanel" aria-labelledby="collection-tab-market" hidden>
+            <div class="market-balance"><span>潮贝余额</span><output id="market-coins">0</output></div>
+            <p id="market-description">将拾取物带到潮岸小铺登记寄售，再用潮贝兑换海岸用品。</p>
+            <ul id="market-inventory" class="market-list" aria-label="可售库存"></ul>
+            <button id="market-sell-all" type="button" class="npc-action">出售全部库存</button>
+            <h3>小铺货架</h3><ul id="market-products" class="market-list" aria-label="可购买商品"></ul>
+          </section>
         </dialog>
         <div id="free-view-reticle" class="free-view-reticle" aria-hidden="true"></div>
         <div id="discovery-prompt" class="discovery-prompt" aria-hidden="true">
@@ -571,6 +584,9 @@
         </label>
 
         <div id="camera-bookmarks" class="control-group camera-bookmarks">
+          <button id="street-view" class="tool-button" type="button" title="查看海滨小街">
+            <i data-lucide="store" aria-hidden="true"></i><span>海滨小街</span>
+          </button>
           <div class="control-heading">
             <span>构图书签</span>
             <output id="bookmark-output">槽位 1 · 空</output>

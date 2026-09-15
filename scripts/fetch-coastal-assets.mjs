@@ -5,8 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const destination = path.join(root, 'tmp/coastal-source');
-const ids = ['wooden_picnic_table', 'wooden_crate_02', 'plastic_crate_01',
-  'lifebuoy', 'lambis_shell', 'boulder_01'];
+const street = process.argv.includes('--street');
+const ids = street ? ['outdoor_table_chair_set_01', 'planter_box_01']
+  : ['wooden_picnic_table', 'wooden_crate_02', 'plastic_crate_01', 'lifebuoy', 'lambis_shell', 'boulder_01'];
 
 async function fetchData(url) {
   const response = await fetch(url, { signal: AbortSignal.timeout(90000) });
@@ -45,5 +46,5 @@ for (const id of ids) {
     licenseUrl: 'https://polyhaven.com/license', file: `${id}/${name}`, dependencies });
   console.log(`${id}: ${dependencies.length} verified files`);
 }
-await writeFile(path.join(destination, 'sources.json'), JSON.stringify(records, null, 2));
+await writeFile(path.join(destination, street ? 'sources-street.json' : 'sources.json'), JSON.stringify(records, null, 2));
 console.log('Coastal source assets downloaded and MD5 verified.');

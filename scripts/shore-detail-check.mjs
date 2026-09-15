@@ -61,7 +61,7 @@ try {
       assert.equal(state.overlaps, 0, 'Entire grass clump and wind margin must clear loaded assets');
       assert.equal(state.onWalkway, 0); assert.ok(state.moved > 0 && state.stable && state.finite);
     }
-    assert.equal(clearance.low.count, 200); assert.equal(clearance.high.count, 460);
+    assert.equal(clearance.low.count, 70); assert.equal(clearance.high.count, 300);
     assert.equal(clearance.retained, true); assert.equal(requests.length, 6);
     await page.evaluate(() => {
       const e = window.__TIDELINE__.experience;
@@ -116,7 +116,7 @@ try {
       e.renderer.setAnimationLoop(e.animate);
       return { render, table: e.billiards.group.position.toArray(), npc: e.npcs.getState().loaded };
     });
-    assert.equal(last.table[2], 31.2); assert.equal(last.npc, 2);
+    assert.equal(last.table[2], 31.2); assert.equal(last.npc, 10);
     const budget = RENDER_BUDGETS[mobile ? 'mobile' : 'desktop'];
     assert.ok(last.render.calls <= budget.calls && last.render.triangles <= budget.triangles, JSON.stringify(last.render));
     await page.waitForTimeout(300);

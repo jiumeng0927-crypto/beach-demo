@@ -27,6 +27,7 @@ import {
   RotateCcw,
   Save,
   SlidersHorizontal,
+  Store,
   Trash2,
   X,
 } from 'lucide';
@@ -66,6 +67,7 @@ createIcons({
     RotateCcw,
     Save,
     SlidersHorizontal,
+    Store,
     Trash2,
     X,
   },

@@ -116,6 +116,11 @@ export class UIController {
       expandPool(false);
       this.showToast('视角已重置');
     }, eventOptions);
+    this.root.querySelector('#street-view').addEventListener('click', () => {
+      experience.focusStreet();
+      this.closeAllPanels();
+      expandPool(false);
+    }, eventOptions);
     this.discoveryReset.addEventListener(
       'click',
       () => experience.resetDiscovery(),

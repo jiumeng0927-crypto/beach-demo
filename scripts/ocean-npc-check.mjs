@@ -22,7 +22,7 @@ for (const quality of ['high', 'low']) {
     assert.ok((p.getX(v) - p.getX(u)) * (p.getY(w) - p.getY(u))
       - (p.getY(v) - p.getY(u)) * (p.getX(w) - p.getX(u)) > 0, 'Ocean must face up');
   }
-  assert.equal(a.length / 3, quality === 'high' ? 24576 : 13824);
+  assert.equal(a.length / 3, quality === 'high' ? 24580 : 13828);
   g.dispose();
 }
 const server = process.env.TIDELINE_URL ? null : await createServer({ logLevel: 'error',
@@ -42,14 +42,20 @@ try {
     await page.goto(url);
     await page.waitForFunction(() => window.__TIDELINE__?.getState().initialized);
     await page.click('#start-button');
-    await page.evaluate(() => window.__TIDELINE__.experience.npcs.ready);
+    await page.evaluate(async mobile => {
+      const e = window.__TIDELINE__.experience;
+      await e.npcs.ready;
+      // Functional assertions compare one quality profile, not an adaptive
+      // profile that may change under headless GPU load during the scenario.
+      e.setQuality(mobile ? 'low' : 'high');
+    }, mobile);
     await page.waitForTimeout(700);
     const initial = await page.evaluate(() => {
       const e = window.__TIDELINE__.experience;
       return { npcs: e.npcs.getState(), water: e.getDebugState().water, render: e.getDebugState().render,
         colliders: e.world.cameraColliderCount, shots: e.billiards.getDebugState().shots };
     });
-    assert.equal(initial.npcs.loaded, 2); assert.deepEqual(initial.npcs.errors, []);
+    assert.equal(initial.npcs.loaded, 10); assert.deepEqual(initial.npcs.errors, []);
     assert.ok(initial.npcs.items.every(i => i.clips.includes('Idle') && i.animationTime > 0));
     assert.ok(initial.water.refraction.captures > 0 && initial.water.refraction.depth);
     assert.ok(initial.water.refraction.width <= (mobile ? 768 : 1536));
@@ -105,6 +111,11 @@ try {
     await page.click('#npc-button'); await page.click('[data-npc-action="chen"]');
     await page.click('[data-npc-action="pool"]'); await page.waitForTimeout(1000);
     assert.equal(await page.evaluate(() => window.__TIDELINE__.experience.billiards.getDebugState().shots), initial.shots);
+    await page.click('#npc-button'); await page.click('[data-npc-action="yu"]');
+    await page.click('[data-npc-action="market"]');
+    await page.waitForFunction(() => document.querySelector('#collection-dialog').open);
+    assert.equal(await page.locator('#collection-market-panel').isVisible(), true);
+    await page.click('#collection-close');
 
     // Aim directly at the authored mesh and exercise real canvas picking, not only the roster.
     const point = await page.evaluate(() => {
@@ -138,17 +149,30 @@ try {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#npc-dialog').evaluate(d => d.open), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    // HTMLDialogElement removes open before its queued close event resets
+    // activeId. Wait for that state transition before sending a new E press.
+    await page.waitForFunction(() => window.__TIDELINE__.experience.npcs.activeId === null);
 
     // The same E path supports the existing unlocked movement fallback used in tests.
     await page.evaluate(() => {
       const e = window.__TIDELINE__.experience, p = e.npcs.items[0].root.position;
       e.setCameraMode('walk', { requestPointerLock: false });
       e.camera.position.copy(p).add({ x: 0, y: 1.65, z: 3 });
+      e.freeCamera.snapToGround();
       e.camera.lookAt(p.clone().add({ x: 0, y: 1.2, z: 0 })); e.camera.updateMatrixWorld(true);
     });
     await page.keyboard.press('e');
+    if (!await page.locator('#npc-dialog').evaluate(d => d.open)) console.log('NEARBY_DIAGNOSTIC', await page.evaluate(() => {
+      const e = window.__TIDELINE__.experience, rect = e.canvas.getBoundingClientRect();
+      const pick = e.npcs.pick(rect.x + rect.width / 2, rect.y + rect.height / 2, 4.5);
+      return { mode: e.cameraMode, free: e.freeCamera.getDebugState(), camera: e.camera.position.toArray(),
+        direction: e.camera.getWorldDirection(e.camera.position.clone()).toArray(), npc: e.npcs.items[0].root.position.toArray(),
+        pick: pick?.spec.id, active: e.npcs.activeId, focused: document.activeElement.id,
+        blockers: e.npcs.ray.intersectObjects([e.world.root, e.coastalProps.root, e.billiards.group], true).map(h => [h.object.name,h.distance]) };
+    }));
     assert.equal(await page.locator('#npc-dialog').evaluate(d => d.open), true, 'Nearby E must open NPC');
     await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.__TIDELINE__.experience.npcs.activeId === null);
     const reuse = await page.evaluate(async mobile => {
       const e = window.__TIDELINE__.experience, ids = e.npcs.items.map(i => i.root.uuid);
       const colliders = e.world.cameraColliderCount;
@@ -213,7 +237,7 @@ try {
   assert.deepEqual(await failedPage.evaluate(() => {
     const e = window.__TIDELINE__.experience;
     return { initialized: e.initialized, loaded: e.npcs.items.length, errors: e.npcs.errors.length };
-  }), { initialized: true, loaded: 0, errors: 2 });
+  }), { initialized: true, loaded: 0, errors: 10 });
   await failedContext.close();
   console.log(JSON.stringify({ results, unavailableNpc: 'base scene usable' }, null, 2));
 } finally { await browser.close(); await server?.close(); }

@@ -1,5 +1,6 @@
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import bpy
@@ -7,14 +8,17 @@ import bmesh
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'tmp' / 'coastal-source'
-OUTPUT = ROOT / 'public' / 'models' / 'coastal'
+STREET = '--street' in sys.argv
+OUTPUT = ROOT / 'public' / 'models' / ('street' if STREET else 'coastal')
 LIMITS = {
     'wooden_picnic_table': 4500,
     'wooden_crate_02': 1800,
     'plastic_crate_01': 2400,
-    'lifebuoy': 3500,
-    'lambis_shell': 2200,
+    'lifebuoy': 1400,
+    'lambis_shell': 800,
     'boulder_01': 3500,
+    'outdoor_table_chair_set_01': 1600,
+    'planter_box_01': 600,
 }
 
 
@@ -27,7 +31,7 @@ def triangles(objects):
 
 
 OUTPUT.mkdir(parents=True, exist_ok=True)
-records = json.loads((SOURCE / 'sources.json').read_text(encoding='utf8'))
+records = json.loads((SOURCE / ('sources-street.json' if STREET else 'sources.json')).read_text(encoding='utf8'))
 for record in records:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(SOURCE / record['file']))
@@ -35,7 +39,7 @@ for record in records:
     before = triangles(objects)
     ratio = min(1.0, LIMITS[record['id']] / max(1, before))
     for obj in objects:
-        if record['id'] == 'boulder_01':
+        if record['id'] == 'boulder_01' or STREET:
             # glTF splits coincident vertices at shading/UV seams; weld positions
             # while retaining per-corner UVs so collapse can simplify the surface.
             mesh = bmesh.new()
@@ -49,6 +53,9 @@ for record in records:
             modifier.ratio = ratio
             modifier.use_collapse_triangulate = True
             bpy.ops.object.modifier_apply(modifier=modifier.name)
+        if STREET:
+            obj.data.validate(clean_customdata=False)
+            obj.data.update()
     if triangles(objects) > LIMITS[record['id']] + 10:
         raise RuntimeError(f"Decimation did not meet the budget for {record['id']}")
     if record['id'] == 'boulder_01':

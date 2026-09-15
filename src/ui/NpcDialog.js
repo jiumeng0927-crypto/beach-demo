@@ -85,6 +85,10 @@ export class NpcDialog {
     this.buttons(conversation.actions, action => {
       const result = this.experience.npcs.perform(action);
       if (result === 'close') this.dialog.close();
+      else if (result === 'market') {
+        this.dialog.close();
+        setTimeout(() => this.experience.dispatchEvent(new Event('marketopen')), 0);
+      }
       else if (result) this.text.textContent = result;
     });
   }

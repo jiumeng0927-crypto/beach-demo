@@ -109,7 +109,7 @@ try {
     });
     await page.screenshot({ path: `${prefix}-grass.png` });
     if (!reference) assert.ok(grass.minTint > 0.65 && grass.maxTint <= 1, 'Instance tint must not double-darken blade colors');
-    assert.equal(grass.count, mobile ? 200 : 460);
+    assert.equal(grass.count, mobile ? 70 : 300);
     assert.deepEqual(errors, []);
     const disposal = await page.evaluate(() => {
       const e = window.__TIDELINE__.experience;

@@ -1,8 +1,11 @@
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, renameSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { verifiedPublicFiles } from './public-assets.mjs';
 
 const projectRoot = resolve(import.meta.dirname, '..');
+if (existsSync(resolve(projectRoot, 'dist/dev.html'))) {
+  renameSync(resolve(projectRoot, 'dist/dev.html'), resolve(projectRoot, 'dist/index.html'));
+}
 const files = [
   ...verifiedPublicFiles().map((name) => [`public/${name}`, `dist/${name}`]),
   ['LICENSE', 'dist/LICENSE'],
@@ -21,6 +24,10 @@ const files = [
   ['docs/LIVING_COAST_041.md', 'dist/海岸生态与玩法学习记录.md'],
   ['docs/BILLIARDS_PRESENTATION_042.md', 'dist/台球视听与建模学习记录.md'],
   ['docs/BILLIARDS_INTERACTION_043.md', 'dist/台球状态与锁镜学习记录.md'],
+  ['docs/SCENE_BOUNDARIES_044.md', 'dist/场景边界学习记录.md'],
+  ['docs/COASTAL_STREET_045.md', 'dist/海滨街区学习记录.md'],
+  ['docs/COASTAL_MARKET_046.md', 'dist/拾光交易与场景收敛学习记录.md'],
+  ['docs/MANUAL_PUBLISH.md', 'dist/手动发布说明.md'],
 ];
 
 for (const [source, destination] of files) {

@@ -517,6 +517,18 @@ export class BeachDiscoveryGame extends EventTarget {
     this.dispatchProgress(); return true;
   }
 
+  sellItems(kind = 'all') {
+    const transaction = this.campaign.sell(kind);
+    if (transaction) this.dispatchProgress();
+    return transaction;
+  }
+
+  buyProduct(id) {
+    const transaction = this.campaign.buy(id);
+    if (transaction) this.dispatchProgress();
+    return transaction;
+  }
+
   isAvailable(item) {
     return item && !item.collected && (!item.lowTide || (this.tideLevel ?? 0) <= -.22);
   }
