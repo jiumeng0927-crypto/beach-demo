@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.47.0 - 2026-09-15
+
+- Add a persistent daily coastal commission board with three deterministic rotations covering tides, collection, trade, billiards, weather movement and camera bookmarks.
+- Route real discovery, transaction, shot, pocket and bookmark events into task progress. Count sold item quantities, ignore cue-ball pockets and require grounded movement for rain patrol time.
+- Add explicit reward claiming through the existing tide-coin economy, with bounded progress, duplicate-claim protection, corrupt-storage fallback and refresh-safe logical day continuity.
+- Extend the collection dialog to accessible peer tabs for journal, market and commissions. Show live progress/rewards on desktop and mobile, and let the shopkeeper open either market or commission view.
+- Fix the generic NPC chat branch so text-only visitors cannot reference an undefined local item.
+- Add deterministic commission tests and a desktop/mobile end-to-end path for low tide, billiards shots, sunset bookmark, persistence and reward claiming. Export the manual-upload web snapshot and learning guide.
+
 ## 0.46.0 - 2026-09-15
 
 - Connect all 18 beach discoveries to a persistent local economy. Collected sea glass, shells and litter enter an inventory that can be sold for tide coins; purchases include a distance clue, future sale bonus and collectible pin.

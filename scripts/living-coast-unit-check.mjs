@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { CoastalClock } from '../src/experience/CoastalClock.js';
 import { CollectionCampaign, COLLECTION_SAVE_KEY } from '../src/experience/CollectionCampaign.js';
+import { CoastalCommissionBoard, COMMISSION_SAVE_KEY } from '../src/experience/CoastalCommissionBoard.js';
 
 const clock = new CoastalClock();
 clock.update(1800); assert.equal(clock.hour, 12); assert.equal(clock.days, 1);
@@ -57,4 +58,33 @@ const invalid = new CollectionCampaign(sites, storage);
 assert.equal(invalid.chapter, 0); assert.equal(invalid.found.size, 0); assert.equal(invalid.rewardClaimed, false);
 const denied = new CollectionCampaign(sites, { getItem() { throw Error('denied'); }, setItem() { throw Error('denied'); } });
 assert.equal(denied.collect(0, 0), true); assert.equal(denied.saved, false);
-console.log('PASS: continuous clock, 18-site chapters, economy, save migration, corrupt/denied storage');
+
+const rewards = [];
+let commissions = new CoastalCommissionBoard({ storage, grantReward: (amount, task) => {
+  rewards.push({ amount, id: task.id }); return true;
+} });
+assert.deepEqual(commissions.getState().tasks.map(task => task.id), ['tide-watch', 'sand-break', 'sunset-frame']);
+assert.equal(commissions.record('low-tide'), true);
+assert.equal(commissions.record('low-tide'), false);
+assert.equal(commissions.record('billiards-shot'), true);
+assert.equal(commissions.claim('sand-break'), null);
+assert.equal(commissions.record('billiards-shot', 4), true);
+assert.equal(commissions.claim('sand-break').reward, 12);
+assert.deepEqual(rewards, [{ amount: 12, id: 'sand-break' }]);
+assert.equal(commissions.claim('sand-break'), null);
+commissions = new CoastalCommissionBoard({ storage, grantReward: () => true });
+assert.equal(commissions.getState().tasks.find(task => task.id === 'sand-break').claimed, true);
+assert.equal(commissions.syncDay(1), true);
+assert.deepEqual(commissions.getState().tasks.map(task => task.id), ['shore-clean', 'market-delivery', 'rain-patrol']);
+assert.equal(commissions.record('collect-item', 2), true);
+assert.equal(commissions.record('sell-item', 1), true);
+assert.equal(commissions.record('rain-walk-second', 15), true);
+assert.equal(commissions.getState().completed, 2);
+assert.equal(commissions.syncDay(1), false);
+assert.equal(commissions.syncDay(2), true);
+assert.deepEqual(commissions.getState().tasks.map(task => task.id), ['pocket-practice', 'local-customer', 'tide-watch']);
+storage.setItem(COMMISSION_SAVE_KEY, '{broken');
+assert.equal(new CoastalCommissionBoard({ storage }).getState().day, 0);
+const deniedCommissions = new CoastalCommissionBoard({ storage: { getItem() { throw Error('denied'); }, setItem() { throw Error('denied'); } } });
+assert.equal(deniedCommissions.record('low-tide'), true); assert.equal(deniedCommissions.saved, false);
+console.log('PASS: continuous clock, collection economy, daily commissions, save migration, corrupt/denied storage');

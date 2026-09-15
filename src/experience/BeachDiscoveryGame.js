@@ -519,13 +519,24 @@ export class BeachDiscoveryGame extends EventTarget {
 
   sellItems(kind = 'all') {
     const transaction = this.campaign.sell(kind);
-    if (transaction) this.dispatchProgress();
+    if (transaction) {
+      const count = Object.values(transaction.sold).reduce((total, value) => total + value, 0);
+      this.dispatchEvent(new CustomEvent('markettransaction', {
+        detail: { type: 'sell', count, ...transaction },
+      }));
+      this.dispatchProgress();
+    }
     return transaction;
   }
 
   buyProduct(id) {
     const transaction = this.campaign.buy(id);
-    if (transaction) this.dispatchProgress();
+    if (transaction) {
+      this.dispatchEvent(new CustomEvent('markettransaction', {
+        detail: { type: 'buy', count: 1, ...transaction },
+      }));
+      this.dispatchProgress();
+    }
     return transaction;
   }
 

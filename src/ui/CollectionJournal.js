@@ -9,11 +9,14 @@ export class CollectionJournal {
     this.tabs = [...document.querySelectorAll('.collection-tabs [role="tab"]')];
     this.journalPanel = document.querySelector('#collection-journal-panel');
     this.marketPanel = document.querySelector('#collection-market-panel');
+    this.commissionPanel = document.querySelector('#collection-commissions-panel');
+    this.panels = { journal: this.journalPanel, market: this.marketPanel, commissions: this.commissionPanel };
     this.marketInventory = document.querySelector('#market-inventory');
     this.marketProducts = document.querySelector('#market-products');
+    this.commissionList = document.querySelector('#commission-list');
     const options = { signal };
     this.button.addEventListener('click', () => this.open('journal'), options);
-    this.tabs.forEach(tab => tab.addEventListener('click', () => this.setTab(tab.id.endsWith('market') ? 'market' : 'journal'), options));
+    this.tabs.forEach(tab => tab.addEventListener('click', () => this.setTab(tab.dataset.collectionTab), options));
     this.select.addEventListener('change', () => this.render(), options);
     document.querySelector('#collection-close').addEventListener('click', () => this.dialog.close(), options);
     document.querySelector('#collection-next').addEventListener('click', () => {
@@ -34,13 +37,21 @@ export class CollectionJournal {
       if (!button) return;
       experience.discovery.buyProduct(button.dataset.marketProduct); this.render();
     }, options);
+    this.commissionList.addEventListener('click', event => {
+      const button = event.target.closest('[data-commission-claim]');
+      if (!button) return;
+      experience.claimCommission(button.dataset.commissionClaim);
+      this.render();
+    }, options);
     this.dialog.addEventListener('close', () => {
       experience.controls.enabled = experience.entered && !experience.cameraTween && experience.cameraMode === 'orbit';
       this.button.setAttribute('aria-expanded', 'false');
       (this.returnFocus?.isConnected ? this.returnFocus : this.button).focus({ preventScroll: true });
     }, options);
     experience.addEventListener('discoveryprogress', () => { if (this.dialog.open) this.render(); }, options);
+    experience.addEventListener('commissionchange', () => { if (this.dialog.open) this.renderCommissions(); }, options);
     experience.addEventListener('marketopen', () => this.open('market'), options);
+    experience.addEventListener('commissionopen', () => this.open('commissions'), options);
   }
 
   open(tab = 'journal') {
@@ -55,10 +66,11 @@ export class CollectionJournal {
   }
 
   setTab(tab) {
-    const market = tab === 'market';
-    this.tabs[0].setAttribute('aria-selected', String(!market));
-    this.tabs[1].setAttribute('aria-selected', String(market));
-    this.journalPanel.hidden = market; this.marketPanel.hidden = !market;
+    const selected = this.panels[tab] ? tab : 'journal';
+    for (const button of this.tabs) {
+      button.setAttribute('aria-selected', String(button.dataset.collectionTab === selected));
+    }
+    for (const [name, panel] of Object.entries(this.panels)) panel.hidden = name !== selected;
   }
 
   render() {
@@ -85,6 +97,7 @@ export class CollectionJournal {
     hint.disabled = !game.items.some(item => game.isAvailable(item));
     hint.hidden = state.chapterComplete;
     this.renderMarket(state.economy);
+    this.renderCommissions();
   }
 
   renderMarket(economy) {
@@ -106,6 +119,30 @@ export class CollectionJournal {
       button.textContent = product.purchased ? '已拥有' : `${product.price} 潮贝`;
       button.disabled = product.purchased || !product.affordable;
       row.append(name, detail, button); this.marketProducts.append(row);
+    }
+  }
+
+  renderCommissions() {
+    const state = this.experience.commissions?.getState();
+    if (!state) return;
+    document.querySelector('#commission-day').textContent = `海岸日 ${state.day + 1}`;
+    document.querySelector('#commission-summary').textContent = `${state.completed} / ${state.total}`;
+    this.commissionList.replaceChildren();
+    for (const task of state.tasks) {
+      const row = document.createElement('li');
+      const name = document.createElement('strong');
+      const detail = document.createElement('span');
+      const button = document.createElement('button');
+      name.textContent = task.title;
+      detail.textContent = `${task.description} ${task.progress} / ${task.target}`;
+      button.type = 'button';
+      button.dataset.commissionClaim = task.id;
+      button.textContent = task.claimed ? '已领取' : task.complete ? `领取 ${task.reward}` : `${task.reward} 潮贝`;
+      button.disabled = !task.complete || task.claimed;
+      row.classList.toggle('is-complete', task.complete);
+      row.classList.toggle('is-claimed', task.claimed);
+      row.append(name, detail, button);
+      this.commissionList.append(row);
     }
   }
 }

@@ -231,9 +231,10 @@ export class BeachNpcSystem extends EventTarget {
     if (!item) return null;
     if (item.spec.merchant) {
       const economy = this.experience.discovery.campaign.getState().economy;
+      const commissions = this.experience.commissions?.getState();
       return { ...item.spec,
-        text: `${item.spec.text} 你现在有 ${economy.inventoryTotal} 件可售物品和 ${economy.coins} 枚潮贝。`,
-        actions: [{ id: 'market', text: '打开海滨交易' }, { id: 'chat', text: '询问价格' }] };
+        text: `${item.spec.text} 你现在有 ${economy.inventoryTotal} 件可售物品和 ${economy.coins} 枚潮贝。今日委托已完成 ${commissions?.completed ?? 0} 项。`,
+        actions: [{ id: 'market', text: '打开海滨交易' }, { id: 'commissions', text: '查看今日委托' }, { id: 'chat', text: '询问价格' }] };
     }
     if (item.spec.street) return { ...item.spec, text: item.spec.text,
       actions: [{ id: 'street', text: '看看海滨小街' }, { id: 'chat', text: '聊聊海边' }] };
@@ -256,6 +257,7 @@ export class BeachNpcSystem extends EventTarget {
   }
 
   perform(action) {
+    const item = this.items.find(i => i.spec.id === this.activeId);
     const conversation = this.getConversation();
     if (!conversation?.actions.some(a => a.id === action)) return null;
     if (action === 'accept') this.questAccepted = true;
@@ -268,6 +270,7 @@ export class BeachNpcSystem extends EventTarget {
     if (action === 'next') this.experience.discovery.nextChapter();
     if (action === 'pool') { this.close(); this.experience.focusBilliards(); return 'close'; }
     if (action === 'market') return 'market';
+    if (action === 'commissions') return 'commissions';
     if (action === 'street') { this.close(); this.experience.focusStreet(); return 'close'; }
     if (action === 'hint') {
       const site = this.experience.discovery.getDebugState().sites.find(site => site.available);
@@ -284,7 +287,7 @@ export class BeachNpcSystem extends EventTarget {
       return `当前寄售价：海玻璃 ${values.glass}、空贝壳 ${values.shell}、瓶罐 ${values.bottle} 枚潮贝。加固拾光袋会提高之后的寄售价。`;
     }
     if (action === 'chat' && conversation.street) return conversation.text;
-    if (action === 'chat' && item.spec.text) return item.spec.text;
+    if (action === 'chat' && item?.spec.text) return item.spec.text;
     if (action === 'chat') return this.activeId === 'chen'
       ? '我最喜欢傍晚的海面。等这一局结束，再去岸边看日落吧。'
       : `现在是${{ low: '低潮', mid: '中潮', high: '高潮' }[this.experience.environment.getTideState().band]}，退潮时沙滩上会多露出一些潮纹。`;

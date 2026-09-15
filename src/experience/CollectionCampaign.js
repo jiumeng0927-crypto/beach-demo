@@ -87,6 +87,13 @@ export class CollectionCampaign {
     this.coins -= product.price; this.purchases.add(id); this.persist();
     return { id, name: product.name, price: product.price, coins: this.coins };
   }
+  grantCoins(amount, source = 'reward') {
+    const granted = Math.max(0, Math.floor(Number(amount) || 0));
+    if (!granted) return null;
+    const before = this.coins;
+    this.coins = Math.min(9999, this.coins + granted); this.persist();
+    return { source, granted: this.coins - before, coins: this.coins };
+  }
   reset() {
     this.chapter = 0; this.found.clear(); this.rewardClaimed = false;
     this.inventory = Object.fromEntries(COLLECTION_KINDS.map(kind => [kind, 0]));

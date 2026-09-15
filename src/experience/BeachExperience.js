@@ -8,6 +8,7 @@ import { BeachDiscoveryGame } from './BeachDiscoveryGame.js';
 import { BloomPostProcessor } from './BloomPostProcessor.js';
 import { CameraBookmarks } from './CameraBookmarks.js';
 import { CoastalProps } from './CoastalProps.js';
+import { CoastalCommissionBoard } from './CoastalCommissionBoard.js';
 import { BeachNpcSystem } from './BeachNpcSystem.js';
 import { BeachEnvironment } from './environment.js';
 import { FreeCameraController } from './FreeCameraController.js';
@@ -109,6 +110,9 @@ export class BeachExperience extends EventTarget {
     this.cameraBookmarks = new CameraBookmarks();
     this.billiardsEventHandlers = null;
     this.discoveryEventHandlers = null;
+    this.commissionEventHandlers = null;
+    this.commissionRainAccumulator = 0;
+    this.commissionStartDay = 0;
 
     this.handleResize = this.handleResize.bind(this);
     this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
@@ -268,6 +272,19 @@ export class BeachExperience extends EventTarget {
     this.bindDiscoveryEvents();
     this.discovery.setEnabled(false);
 
+    let commissionStorage = null;
+    try { commissionStorage = window.localStorage; } catch { /* Storage is optional. */ }
+    this.commissions = new CoastalCommissionBoard({
+      storage: commissionStorage,
+      grantReward: (amount, task) => {
+        const reward = this.discovery.campaign.grantCoins(amount, `commission:${task.id}`);
+        if (reward) this.discovery.dispatchProgress();
+        return reward;
+      },
+    });
+    this.commissionStartDay = this.commissions.day - this.environment.dayClock.getState().days;
+    this.bindCommissionEvents();
+
     this.npcs = new BeachNpcSystem(this);
     this.npcs.addEventListener('dialogchange', () => this.dispatchEvent(new Event('npcdialogchange')));
 
@@ -402,6 +419,60 @@ export class BeachExperience extends EventTarget {
       'aimchange',
       this.billiardsEventHandlers.aim,
     );
+  }
+
+  bindCommissionEvents() {
+    this.commissionEventHandlers = {
+      discovery: () => this.commissions.record('collect-item'),
+      market: (event) => this.commissions.record(
+        event.detail?.type === 'buy' ? 'buy-item' : 'sell-item',
+        event.detail?.count ?? 1,
+      ),
+      shot: () => this.commissions.record('billiards-shot'),
+      pocket: (event) => {
+        if (!event.detail?.cue) this.commissions.record('billiards-pocket');
+      },
+      bookmark: (event) => {
+        const hour = this.environment?.dayClock.getState().hour ?? -1;
+        if (event.detail?.action === 'save' && hour >= 17 && hour < 20.5) {
+          this.commissions.record('sunset-bookmark');
+        }
+      },
+      change: (event) => this.dispatchEvent(new CustomEvent('commissionchange', {
+        detail: event.detail,
+      })),
+      reward: (event) => this.dispatchEvent(new CustomEvent('commissionreward', {
+        detail: event.detail,
+      })),
+    };
+    this.discovery.addEventListener('discover', this.commissionEventHandlers.discovery);
+    this.discovery.addEventListener('markettransaction', this.commissionEventHandlers.market);
+    this.billiards.addEventListener('shot', this.commissionEventHandlers.shot);
+    this.billiards.addEventListener('pocket', this.commissionEventHandlers.pocket);
+    this.addEventListener('camerabookmarkchange', this.commissionEventHandlers.bookmark);
+    this.commissions.addEventListener('change', this.commissionEventHandlers.change);
+    this.commissions.addEventListener('reward', this.commissionEventHandlers.reward);
+  }
+
+  updateCommissions(delta, dayClock) {
+    if (!this.commissions) return;
+    this.commissions.syncDay(this.commissionStartDay + dayClock.days);
+    if (this.environment.getTideState().band === 'low') {
+      this.commissions.record('low-tide');
+    }
+    const walkingInRain = this.rainEnabled && this.cameraMode === 'walk'
+      && this.freeCamera?.isGrounded() && this.freeCamera.getHorizontalSpeed() > 0.15;
+    if (!walkingInRain) return;
+    this.commissionRainAccumulator += delta;
+    const seconds = Math.floor(this.commissionRainAccumulator);
+    if (seconds > 0) {
+      this.commissionRainAccumulator -= seconds;
+      this.commissions.record('rain-walk-second', seconds);
+    }
+  }
+
+  claimCommission(id) {
+    return this.commissions?.claim(id) ?? null;
   }
 
   startPreview() {
@@ -1198,6 +1269,7 @@ export class BeachExperience extends EventTarget {
         ) ?? 'sand',
       speed: this.freeCamera?.getHorizontalSpeed() ?? 0,
     });
+    this.updateCommissions(delta, dayClock);
     this.gpuFrameTimer?.poll();
     this.gpuFrameTimer?.begin();
     try {
@@ -1366,6 +1438,15 @@ export class BeachExperience extends EventTarget {
         this.billiardsEventHandlers.aim,
       );
     }
+    if (this.commissionEventHandlers) {
+      this.discovery?.removeEventListener('discover', this.commissionEventHandlers.discovery);
+      this.discovery?.removeEventListener('markettransaction', this.commissionEventHandlers.market);
+      this.billiards?.removeEventListener('shot', this.commissionEventHandlers.shot);
+      this.billiards?.removeEventListener('pocket', this.commissionEventHandlers.pocket);
+      this.removeEventListener('camerabookmarkchange', this.commissionEventHandlers.bookmark);
+      this.commissions?.removeEventListener('change', this.commissionEventHandlers.change);
+      this.commissions?.removeEventListener('reward', this.commissionEventHandlers.reward);
+    }
     this.world?.unregisterCameraCollider(this.billiards?.cameraCollider);
     this.discovery?.dispose();
     this.billiards?.dispose();
@@ -1424,6 +1505,7 @@ export class BeachExperience extends EventTarget {
       npcs: this.npcs?.getState() ?? null,
       billiards: this.billiards?.getDebugState() ?? null,
       discovery: this.discovery?.getDebugState() ?? null,
+      commissions: this.commissions?.getState() ?? null,
       rain: this.rain?.getDebugState() ?? {
         enabled: this.rainEnabled,
         visible: false,

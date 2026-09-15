@@ -88,9 +88,25 @@ try {
       e.renderer.setAnimationLoop(e.animate); return { moved, paused };
     });
     assert.equal(clock.moved, 12.8); assert.equal(clock.paused, clock.moved);
+    await page.evaluate(() => window.__TIDELINE__.experience.setTideMode('low'));
+    await page.waitForFunction(() => window.__TIDELINE__.experience.getDebugState().commissions.tasks
+      .find(task => task.id === 'tide-watch')?.complete);
+    await page.evaluate(() => {
+      const e = window.__TIDELINE__.experience;
+      e.billiards.dispatchEvent(new CustomEvent('shot', { detail: { source: 'test' } }));
+      e.billiards.dispatchEvent(new CustomEvent('shot', { detail: { source: 'test' } }));
+      e.setTimeOfDay('sunset');
+      e.saveCameraBookmark(3);
+      e.resetCamera();
+      e.cameraTween = null;
+    });
     await page.click('#collection-open');
     assert.equal(await page.locator('#collection-dialog').evaluate(d => d.open), true);
     await page.screenshot({ path: `screenshots/living-coast-041-${label}-journal.png` });
+    await page.click('#collection-tab-commissions');
+    assert.equal(await page.locator('#commission-summary').textContent(), '3 / 3');
+    assert.equal(await page.locator('#commission-list .is-complete').count(), 3);
+    await page.screenshot({ path: `screenshots/living-coast-047-${label}-commissions.png` });
     await page.click('#collection-close');
     await page.evaluate(() => { const d = window.__TIDELINE__.experience.discovery; d.items.forEach((_, i) => d.collect(i)); });
     await page.click('#collection-open'); await page.click('#collection-tab-market');
@@ -135,6 +151,7 @@ try {
       return { collected: state.overallCollected, coins: state.economy.coins,
         shell: state.economy.inventory.shell, purchases: state.economy.purchases };
     }), { collected: 7, coins: 32, shell: 1, purchases: ['tide-map'] });
+    assert.equal(await page.evaluate(() => window.__TIDELINE__.experience.commissions.getState().completed), 3);
     await page.evaluate(() => window.__TIDELINE__.experience.setTideMode('low'));
     await page.waitForFunction(() => window.__TIDELINE__.experience.discovery.tideLevel <= -.22);
     await page.evaluate(() => { const d = window.__TIDELINE__.experience.discovery; d.items.forEach((_, i) => d.collect(i)); });
@@ -145,6 +162,12 @@ try {
     assert.ok(end.completed); assert.equal(end.badges.length, 3);
     await page.click('#collection-open');
     await page.screenshot({ path: `screenshots/living-coast-041-${label}-complete.png` });
+    await page.click('#collection-tab-commissions');
+    await page.click('[data-commission-claim="tide-watch"]');
+    assert.deepEqual(await page.evaluate(() => ({
+      coins: window.__TIDELINE__.experience.discovery.campaign.getState().economy.coins,
+      claimed: window.__TIDELINE__.experience.commissions.getState().claimed,
+    })), { coins: 42, claimed: 1 });
     await page.keyboard.press('Escape');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []);
@@ -157,7 +180,8 @@ try {
       e.dispose(); e.dispose(); return counts;
     });
     assert.deepEqual(disposed, [1, 1, 1, 1, 1, 1, 1]);
-    results.push({ label, render: initial.render, cloudDelta, completed: end.completed, savedReload: true, disposed });
+    results.push({ label, render: initial.render, cloudDelta, completed: end.completed,
+      commissionCompleted: 3, commissionClaimed: 1, savedReload: true, disposed });
     await context.close();
   }
   console.log(JSON.stringify({ ok: true, results }, null, 2));

@@ -776,7 +776,7 @@ kbd {
 .collection-dialog h2 { font-size: 23px; margin: 0; }
 .collection-dialog p { font-size: 13px; line-height: 1.6; }
 .collection-dialog .icon-button { color: #283b35; background: #e1e9e1; }
-.collection-tabs { display: grid; grid-template-columns: 1fr 1fr; margin-top: 14px; border-bottom: 1px solid #b8c9bf; }
+.collection-tabs { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 14px; border-bottom: 1px solid #b8c9bf; }
 .collection-tabs button { min-height: 38px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #66776f; font: inherit; cursor: pointer; }
 .collection-tabs button[aria-selected="true"] { border-bottom-color: #447663; color: #274d41; font-weight: 600; }
 .collection-select { display: grid; gap: 8px; font-size: 12px; margin-top: 15px; }
@@ -799,6 +799,12 @@ kbd {
 .market-list span { color: #67776e; font-size: 12px; }
 .market-list button { grid-column: 2; grid-row: 1 / span 2; min-width: 82px; min-height: 34px; border: 1px solid #7d9d94; border-radius: 4px; background: #e2ebe5; color: #25453b; font: inherit; cursor: pointer; }
 .market-list button:disabled { opacity: .55; cursor: default; }
+.commission-heading { display: flex; align-items: baseline; justify-content: space-between; margin-top: 18px; padding-bottom: 10px; border-bottom: 1px solid #d7e1d6; }
+.commission-heading span { color: #305f50; font-size: 15px; font-weight: 600; }
+.commission-heading output { color: #67776e; font-size: 13px; font-variant-numeric: tabular-nums; }
+.commission-list li { min-height: 58px; }
+.commission-list .is-complete strong { color: #305f50; }
+.commission-list .is-claimed { opacity: .68; }
 @media (max-width: 720px) {
   .time-control { gap: 4px; }
   .clock-status { padding: 0 2px; }

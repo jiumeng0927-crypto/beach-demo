@@ -89,6 +89,10 @@ export class NpcDialog {
         this.dialog.close();
         setTimeout(() => this.experience.dispatchEvent(new Event('marketopen')), 0);
       }
+      else if (result === 'commissions') {
+        this.dialog.close();
+        setTimeout(() => this.experience.dispatchEvent(new Event('commissionopen')), 0);
+      }
       else if (result) this.text.textContent = result;
     });
   }

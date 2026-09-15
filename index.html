@@ -10,12 +10,12 @@
     <meta name="theme-color" content="#132a2b" />
     <link rel="icon" href="./assets/favicon-3EaPP8b7.svg" type="image/svg+xml" />
     <title>潮汐沙岸 | Tideline</title>
-    <script type="module" crossorigin src="./assets/dev-BPzZIuHu.js"></script>
+    <script type="module" crossorigin src="./assets/dev-bgbsW-3Z.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/icons-BtdRTwib.js">
     <link rel="modulepreload" crossorigin href="./assets/three-core-DliF7g28.js">
     <link rel="modulepreload" crossorigin href="./assets/three-addons-BR_xR6D3.js">
     <link rel="modulepreload" crossorigin href="./assets/three-loaders-DVOeQf6O.js">
-    <link rel="stylesheet" crossorigin href="./assets/dev-j6df0_o7.css">
+    <link rel="stylesheet" crossorigin href="./assets/dev-D0VN1Bx7.css">
   </head>
   <body>
     <main id="app" aria-busy="true">
@@ -277,8 +277,9 @@
         <dialog id="collection-dialog" class="collection-dialog" aria-labelledby="collection-title">
           <header><div><h2 id="collection-title">海岸图鉴</h2><p id="collection-summary"></p></div><button id="collection-close" class="icon-button" type="button" aria-label="关闭图鉴" title="关闭图鉴"><i data-lucide="x" aria-hidden="true"></i></button></header>
           <div class="collection-tabs" role="tablist" aria-label="海岸手记内容">
-            <button id="collection-tab-journal" type="button" role="tab" aria-selected="true" aria-controls="collection-journal-panel">图鉴</button>
-            <button id="collection-tab-market" type="button" role="tab" aria-selected="false" aria-controls="collection-market-panel">交易</button>
+            <button id="collection-tab-journal" data-collection-tab="journal" type="button" role="tab" aria-selected="true" aria-controls="collection-journal-panel">图鉴</button>
+            <button id="collection-tab-market" data-collection-tab="market" type="button" role="tab" aria-selected="false" aria-controls="collection-market-panel">交易</button>
+            <button id="collection-tab-commissions" data-collection-tab="commissions" type="button" role="tab" aria-selected="false" aria-controls="collection-commissions-panel">委托</button>
           </div>
           <section id="collection-journal-panel" role="tabpanel" aria-labelledby="collection-tab-journal">
             <label class="collection-select">记录章节<select id="collection-chapter"><option value="0">01 海玻璃标本</option><option value="1">02 退潮贝壳</option><option value="2">03 海岸清理</option></select></label>
@@ -292,6 +293,11 @@
             <ul id="market-inventory" class="market-list" aria-label="可售库存"></ul>
             <button id="market-sell-all" type="button" class="npc-action">出售全部库存</button>
             <h3>小铺货架</h3><ul id="market-products" class="market-list" aria-label="可购买商品"></ul>
+          </section>
+          <section id="collection-commissions-panel" role="tabpanel" aria-labelledby="collection-tab-commissions" hidden>
+            <div class="commission-heading"><span id="commission-day">海岸日 1</span><output id="commission-summary">0 / 3</output></div>
+            <p>今日委托会随自然时间跨日轮换，完成后可领取潮贝。</p>
+            <ul id="commission-list" class="market-list commission-list" aria-label="今日海岸委托"></ul>
           </section>
         </dialog>
         <div id="free-view-reticle" class="free-view-reticle" aria-hidden="true"></div>
